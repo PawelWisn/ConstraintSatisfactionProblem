@@ -1,4 +1,4 @@
-import numpy as np
+from csp import CSP
 
 
 def arr_to_square(arr):
@@ -9,9 +9,10 @@ def arr_to_square(arr):
     return output
 
 
-class Sudoku:
+class Sudoku(CSP):
 
     def __init__(self, id, filename='src/Sudoku.csv'):
+        super().__init__()
         with open(filename, 'r') as f:
             f.readline()  # clear header
             for i in range(1, id):
@@ -22,9 +23,7 @@ class Sudoku:
             self.puzzle = arr_to_square(list(line[2]))
             self.solution = arr_to_square(list(line[3])) if len(line) == 4 else None
             self.size = int(len(list(line[2])) ** 0.5)
-            self.variables = []
             self.setup_variables()
-            self.domains = []
             self.setup_domains()
 
     def setup_variables(self):
@@ -41,7 +40,7 @@ class Sudoku:
         a = int(self.size ** 0.5)
         return int(i // a * a), int(j // a * a)
 
-    def constrains(self):
+    def constraints(self):
         for row in self.puzzle:  # rows
             numbers_in_row = []
             for number in row:
@@ -76,6 +75,37 @@ class Sudoku:
 
         return True
 
+    def solution_complete(self):
+        for row in self.puzzle:  # rows
+            if len(set(row)) != self.size:
+                return False
+
+        for i in range(self.size):  # columns
+            number_set = set()
+            for j in range(self.size):
+                number_set.add(self.puzzle[j][i])
+            if len(number_set) != self.size:
+                return False
+
+        box_size = int(self.size ** 0.5)  # boxes
+        for i in range(box_size):
+            for j in range(box_size):
+                number_set = set()
+                for row in range(box_size):
+                    row_numbers = self.puzzle[i * box_size + row][j * box_size:(j + 1) * box_size]
+                    for number in row_numbers:
+                        number_set.add(number)
+                if len(number_set) != self.size:
+                    return False
+
+        return True
+
+    def assign_val_to_var(self, val, var):
+        self.puzzle[var[0]][var[1]] = str(val)
+
+    def reset_var(self, var):
+        self.puzzle[var[0]][var[1]] = '.'
+
     def print_puzzle(self):
         for row in self.puzzle:
             print(row)
@@ -88,7 +118,10 @@ class Sudoku:
             print()
 
 
-# print(s.get_box_left_top_corner(2, 5))
 s = Sudoku(1)
 s.print_solution()
 s.print_puzzle()
+# print()
+# print()
+# print()
+# print(s.backtrack_search())
