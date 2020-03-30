@@ -36,9 +36,9 @@ class Sudoku(CSP):
         for i in range(len(self.variables)):
             self.domains.append([x for x in range(1, self.size + 1)])
 
-    def get_box_left_top_corner(self, i, j):  # > v (row, column)
-        a = int(self.size ** 0.5)
-        return int(i // a * a), int(j // a * a)
+    # def get_box_left_top_corner(self, i, j):  # > v (row, column)
+    #     a = int(self.size ** 0.5)
+    #     return int(i // a * a), int(j // a * a)
 
     def constraints(self):
         for row in self.puzzle:  # rows
@@ -107,21 +107,19 @@ class Sudoku(CSP):
         self.puzzle[var[0]][var[1]] = '.'
 
     def print_puzzle(self):
+        print("The puzzle:")
         for row in self.puzzle:
             print(row)
         print()
 
     def print_solution(self):
         if self.solution:
+            print("The solution:")
             for row in self.solution:
                 print(row)
             print()
 
 
-s = Sudoku(1)
-s.print_solution()
+s = Sudoku(43)
+print(s.backtrack_search())
 s.print_puzzle()
-# print()
-# print()
-# print()
-# print(s.backtrack_search())

@@ -20,14 +20,13 @@ class CSP(ABC):
                 while True:
                     if domain_indicator_dict[var_indicator] == len(self.domains[var_indicator]):  # if there are no values left
                         self.reset_var(var) # reset changes
-                        domain_indicator_dict[var_indicator] = 0
+                        domain_indicator_dict[var_indicator] = 0 # reset domain
                         var_indicator -= 1  # go to previous variable
                         if var_indicator < 0:  # if there is no previous variable
                             return False  # no solution
                         else:
                             var = self.variables[var_indicator]
                             domain_indicator_dict[var_indicator] += 1  # take another value
-                            continue
                     else:  # if there are values left
                         value = self.domains[var_indicator][domain_indicator_dict[var_indicator]]  # take new value
                         self.assign_val_to_var(value, var)  # assign it to the variable
@@ -36,7 +35,6 @@ class CSP(ABC):
                             break  # continue with another variable
                         else:
                             domain_indicator_dict[var_indicator] += 1  # take another value
-                            continue
 
     def forward(self, csp):
         pass
