@@ -28,27 +28,27 @@ class Sudoku:
         return int(i // a * a), int(j // a * a)
 
     def check_victory(self):
-        expected_sum = int((1 + self.size) / 2 * self.size)
+        self.puzzle=self.solution
         for row in self.puzzle:
-            total = sum(list(map(lambda x: int(x) if x != '.' else 0, row)))
-            if total != expected_sum:
+            if len(set(row)) != self.size:
                 return False
 
         for i in range(self.size):
-            total = 0
+            number_set = set()
             for j in range(self.size):
-                total += int(self.puzzle[j][i]) if self.puzzle[j][i] != '.' else 0
-            if total != expected_sum:
+                number_set.add(self.puzzle[j][i])
+            if len(number_set) != self.size:
                 return False
 
         box_size = int(self.size ** 0.5)
         for i in range(box_size):
             for j in range(box_size):
-                total = 0
+                number_set = set()
                 for row in range(box_size):
-                    total += sum(list(map(lambda x: int(x) if x != '.' else 0,
-                                          self.puzzle[i * box_size + row][j * box_size:(j + 1) * box_size])))
-                if total != expected_sum:
+                    row_numbers = self.puzzle[i * box_size + row][j * box_size:(j + 1) * box_size]
+                    for number in row_numbers:
+                        number_set.add(number)
+                if len(number_set) != self.size:
                     return False
 
         return True
@@ -73,7 +73,27 @@ s.print_puzzle()
 
 
 def brute_force_sudoku(sudoku):
-    pass
+    constants = []
+    for i in range(sudoku.size):
+        for j in range(sudoku.size):
+            if sudoku.puzzle != '.':
+                constants.append((i, j))
+
+    def get_next(i, j):
+        j = j - 1
+        if j < 0:
+            j = sudoku.size - 1
+            i -= 1
+        return i, j
+
+    def increment(i, j):
+        if (i, j) in constants:
+            increment(*get_next(i, j))
+        current = int(sudoku.puzzle[i][j])
+        current += 1
+        if current >= 10:
+            current = 1
+            increment(*get_next(i, j))
 
 
 # print(s.get_box_left_top_corner(2, 5))
