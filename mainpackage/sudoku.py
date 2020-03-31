@@ -77,12 +77,14 @@ class Sudoku(CSP):
 
     def solution_complete(self):
         for row in self.puzzle:  # rows
-            if len(set(row)) != self.size:
+            if '.' in row or len(set(row)) != self.size:
                 return False
 
         for i in range(self.size):  # columns
             number_set = set()
             for j in range(self.size):
+                if self.puzzle[j][i] == '.':
+                    return False
                 number_set.add(self.puzzle[j][i])
             if len(number_set) != self.size:
                 return False
@@ -94,6 +96,8 @@ class Sudoku(CSP):
                 for row in range(box_size):
                     row_numbers = self.puzzle[i * box_size + row][j * box_size:(j + 1) * box_size]
                     for number in row_numbers:
+                        if number == '.':
+                            return False
                         number_set.add(number)
                 if len(number_set) != self.size:
                     return False
@@ -120,6 +124,8 @@ class Sudoku(CSP):
             print()
 
 
-s = Sudoku(43)
+s = Sudoku(1)
+s.print_puzzle()
+s.print_solution()
 print(s.backtrack_search())
 s.print_puzzle()
