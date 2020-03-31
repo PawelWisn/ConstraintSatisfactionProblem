@@ -1,35 +1,45 @@
-from abc import ABC, abstractmethod
+from copy import deepcopy
 
 
 class Variables:
-    def __init__(self, arr, ptr=0):
+    def __init__(self, arr, ptr=-1):
         self.vars = [x for x in arr]
         self.ptr_to_curr = ptr
+        self.size = len(self.vars)
 
     def get_next_var(self):
-        if self.ptr_to_curr + 1 >= len(self.vars):
+        if self.ptr_to_curr == self.size:
             return None
         self.ptr_to_curr += 1
         out = self.vars[self.ptr_to_curr]
         return out
 
-    def get_prev_var(self):
-        if self.ptr_to_curr - 1 < 0:
-            return None
-        self.ptr_to_curr -= 1
-        out = self.vars[self.ptr_to_curr]
-        return out
+    # def get_prev_var(self):
+    #     if self.ptr_to_curr - 1 < 0:
+    #         return None
+    #     self.ptr_to_curr -= 1
+    #     out = self.vars[self.ptr_to_curr]
+    #     return out
+
+    def get_by_idx(self, idx):
+        self.ptr_to_curr = idx
+        return self.vars[idx]
+
+    def get_curr_slice(self):  # current included
+        if self.ptr_to_curr >= 0:
+            return self.vars[0:self.ptr_to_curr + 1]
 
 
 class Domain:
-    def __init__(self, arr, ptr=0):
+    def __init__(self, arr, ptr=-1):
         self.vals = [x for x in arr]
         self.vals_copy = [x for x in arr]
         self.ptr_to_curr = ptr
+        self.size = len(arr)
 
     def reset(self):
         self.vals = [x for x in self.vals_copy]
-        self.ptr_to_curr = 0
+        self.ptr_to_curr = -1
 
     def remove_by_idx(self, idx):
         self.vals = self.vals[:idx] + self.vals[idx + 1:]
@@ -40,33 +50,67 @@ class Domain:
         except ValueError:
             pass
 
-    def get_next_val(self):
-        if self.ptr_to_curr + 1 >= len(self.vals):
-            return None
-        self.ptr_to_curr += 1
-        out = self.vals[self.ptr_to_curr]
-        return out
+    # def get_next_val(self):
+    #     if self.ptr_to_curr == self.size:
+    #         return None
+    #     out = self.vals[self.ptr_to_curr]
+    #     self.ptr_to_curr += 1
+    #     return out
+
+    def get_by_idx(self, idx):
+        self.ptr_to_curr = idx
+        return self.vals[idx]
+
+    def get_curr_val(self):
+        if self.ptr_to_curr>=0:
+            return self.vals[self.ptr_to_curr]
+
+    def __iter__(self):
+        self.ptr_to_curr = -1
+        return self
+
+    def __next__(self):
+        if self.ptr_to_curr+1 < self.size:
+            self.ptr_to_curr += 1
+            return self.vals[self.ptr_to_curr]
+        else:
+            raise StopIteration
 
 
 class Domains:
-    def __init__(self, arr, ptr=0):
+    def __init__(self, arr, ptr=-1):
         self.domains = [Domain(x) for x in arr]
         self.ptr_to_curr = ptr
+        self.size = len(self.domains)
 
     def get_next_dom(self):
-        if self.ptr_to_curr + 1 >= len(self.domains):
-            self.ptr_to_curr = 0
+        if self.ptr_to_curr == self.size:
             return None
         self.ptr_to_curr += 1
         out = self.domains[self.ptr_to_curr]
         return out
 
-    def get_prev_dom(self):
-        if self.ptr_to_curr - 1 < 0:
-            return None
-        self.ptr_to_curr -= 1
-        out = self.domains[self.ptr_to_curr]
-        return out
+    # def get_prev_dom(self):
+    #     if self.ptr_to_curr - 1 < 0:
+    #         return None
+    #     self.ptr_to_curr -= 1
+    #     out = self.domains[self.ptr_to_curr]
+    #     return out
+
+    def get_curr_dom(self):
+        if self.ptr_to_curr>=0:
+            return self.domains[self.ptr_to_curr]
+
+    def get_by_idx(self, idx):
+        self.ptr_to_curr = idx
+        return self.domains[idx]
+
+    def get_curr_val_slice(self):  # current included
+        out = []
+        if self.ptr_to_curr>=0:
+            for domain in self.domains[0:self.ptr_to_curr +1]:
+                out.append(domain.get_curr_val())
+            return out
 
 
 class Constraint:
@@ -106,14 +150,14 @@ class CSP:
         :param is_complete: function that checks if solution is found
         :param state: entry state
         '''
-        self.variables = []
-        self.domains = []
-        self.constraints = []
+        self.variables = variables
+        self.domains = domains
+        self.constraints = constraints
         self.is_complete = is_complete
         self.state = state
 
     def backtrack_search(self):
-        return self.try_([], self.domains[0])
+        return self.try_(self.variables,self.domains, self.state)
         # var_indicator = 0
         # domain_indicator_dict = {}
         # for i in range(len(self.domains)):
@@ -143,20 +187,21 @@ class CSP:
         #                 else:
         #                     domain_indicator_dict[var_indicator] += 1  # take another value
 
-    def try_(self, prev_vals, val_domain):
-        self.print_puzzle()
-        self.clear_state()
-        for var_idx, val in enumerate(prev_vals):
-            self.assign_val_to_var(val, self.variables[var_idx])
-        if self.solution_complete():
-            return prev_vals
-        for val in val_domain:
-            self.assign_val_to_var(val, self.variables[len(prev_vals)])
-            if self.constraints():
-                solution = self.try_(prev_vals + [val], self.domains[len(prev_vals)])
+    def try_(self, vars, doms, state):
+        clean_state = deepcopy(state)
+        state.update(vars.get_curr_slice(), doms.get_curr_val_slice())
+        if self.is_complete(state):
+            return doms.get_curr_val_slice(), state
+        var = vars.get_next_var()
+        for val in doms.get_next_dom():
+            # self.assign_val_to_var(val, self.variables[len(prev_vals)])
+            state.update([var], [val])
+            if self.constraints.are_all_satisfied(state):
+                solution = self.try_(deepcopy(vars), deepcopy(doms), clean_state)
                 if solution:
                     return solution
-        self.reset_var(self.variables[len(prev_vals)])  #
+        # self.reset_var(self.variables[len(prev_vals)])  #
+        # state.print_state()
         return False
 
     def forward(self, csp):
