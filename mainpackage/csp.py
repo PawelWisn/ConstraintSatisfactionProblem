@@ -29,6 +29,7 @@ class Domain:
 
     def reset(self):
         self.vals = [x for x in self.vals_copy]
+        self.ptr_to_curr = 0
 
     def remove_by_idx(self, idx):
         self.vals = self.vals[:idx] + self.vals[idx + 1:]
@@ -46,20 +47,15 @@ class Domain:
         out = self.vals[self.ptr_to_curr]
         return out
 
-    def get_prev_val(self):
-        if self.ptr_to_curr - 1 < 0:
-            return None
-        self.ptr_to_curr -= 1
-        out = self.vals[self.ptr_to_curr]
-        return out
 
 class Domains:
     def __init__(self, arr, ptr=0):
-        self.domains = [x for x in arr]
+        self.domains = [Domain(x) for x in arr]
         self.ptr_to_curr = ptr
 
     def get_next_dom(self):
         if self.ptr_to_curr + 1 >= len(self.domains):
+            self.ptr_to_curr = 0
             return None
         self.ptr_to_curr += 1
         out = self.domains[self.ptr_to_curr]
@@ -72,10 +68,49 @@ class Domains:
         out = self.domains[self.ptr_to_curr]
         return out
 
-class CSP(ABC):
-    def __init__(self):
+
+class Constraint:
+    def __init__(self, constraint):
+        self.constraint = constraint
+
+    def is_satisfied(self, state):
+        return self.constraint(state)
+
+
+class Constraints:
+    def __init__(self, arr, ptr=0):
+        self.constraints = [Constraint(x) for x in arr]
+        self.ptr_to_curr = ptr
+
+    def get_next_con(self):
+        if self.ptr_to_curr + 1 >= len(self.constraints):
+            self.ptr_to_curr = 0
+            return None
+        self.ptr_to_curr += 1
+        out = self.constraints[self.ptr_to_curr]
+        return out
+
+    def are_all_satisfied(self, state):
+        for constraint in self.constraints:
+            if not constraint.is_satisfied(state):
+                return False
+        return True
+
+
+class CSP:
+    def __init__(self, variables, domains, constraints, is_complete, state):
+        '''
+        :param variables: object of Variables class
+        :param domains: object of Domains class
+        :param constraints: object of Constraints class
+        :param is_complete: function that checks if solution is found
+        :param state: entry state
+        '''
         self.variables = []
         self.domains = []
+        self.constraints = []
+        self.is_complete = is_complete
+        self.state = state
 
     def backtrack_search(self):
         return self.try_([], self.domains[0])
@@ -131,18 +166,14 @@ class CSP(ABC):
         for var in self.variables:
             self.reset_var(var)
 
-    @abstractmethod
     def constraints(self):
         pass
 
-    @abstractmethod
     def solution_complete(self):
         pass
 
-    @abstractmethod
     def assign_val_to_var(self, val, var):
         pass
 
-    @abstractmethod
     def reset_var(self, var):
         pass
