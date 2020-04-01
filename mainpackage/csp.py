@@ -20,6 +20,9 @@ class Variables:
     #     self.ptr_to_curr -= 1
     #     out = self.vars[self.ptr_to_curr]
     #     return out
+    def decrement(self):
+        if self.ptr_to_curr >= 0:
+            self.ptr_to_curr -= 1
 
     def get_by_idx(self, idx):
         self.ptr_to_curr = idx
@@ -39,16 +42,23 @@ class Domain:
 
     def reset(self):
         self.vals = [x for x in self.vals_copy]
+        self.size = len(self.vals)
         self.ptr_to_curr = -1
 
     def remove_by_idx(self, idx):
         self.vals = self.vals[:idx] + self.vals[idx + 1:]
+        self.ptr_to_curr = min(self.ptr_to_curr, len(self.vals) - 1)
+        self.size = len(self.vals)
 
     def remove_by_val(self, val):
         try:
             self.vals.remove(val)
+            self.ptr_to_curr = min(self.ptr_to_curr, len(self.vals) - 1)
+            self.size = len(self.vals)
         except ValueError:
             pass
+
+
 
     # def get_next_val(self):
     #     if self.ptr_to_curr == self.size:
@@ -62,7 +72,7 @@ class Domain:
         return self.vals[idx]
 
     def get_curr_val(self):
-        if self.ptr_to_curr>=0:
+        if self.ptr_to_curr >= 0:
             return self.vals[self.ptr_to_curr]
 
     def __iter__(self):
@@ -70,7 +80,7 @@ class Domain:
         return self
 
     def __next__(self):
-        if self.ptr_to_curr+1 < self.size:
+        if self.ptr_to_curr + 1 < self.size:
             self.ptr_to_curr += 1
             return self.vals[self.ptr_to_curr]
         else:
@@ -97,8 +107,13 @@ class Domains:
     #     out = self.domains[self.ptr_to_curr]
     #     return out
 
+    def decrement(self):
+        if self.ptr_to_curr >=0:
+            self.domains[self.ptr_to_curr].reset()
+            self.ptr_to_curr -= 1
+
     def get_curr_dom(self):
-        if self.ptr_to_curr>=0:
+        if self.ptr_to_curr >= 0:
             return self.domains[self.ptr_to_curr]
 
     def get_by_idx(self, idx):
@@ -107,8 +122,8 @@ class Domains:
 
     def get_curr_val_slice(self):  # current included
         out = []
-        if self.ptr_to_curr>=0:
-            for domain in self.domains[0:self.ptr_to_curr +1]:
+        if self.ptr_to_curr >= 0:
+            for domain in self.domains[0:self.ptr_to_curr + 1]:
                 out.append(domain.get_curr_val())
             return out
 
@@ -157,7 +172,7 @@ class CSP:
         self.state = state
 
     def backtrack_search(self):
-        return self.try_(self.variables,self.domains, self.state)
+        return self.try_(self.variables, self.domains, self.state)
         # var_indicator = 0
         # domain_indicator_dict = {}
         # for i in range(len(self.domains)):
@@ -188,8 +203,8 @@ class CSP:
         #                     domain_indicator_dict[var_indicator] += 1  # take another value
 
     def try_(self, vars, doms, state):
-        clean_state = deepcopy(state)
-        state.update(vars.get_curr_slice(), doms.get_curr_val_slice())
+        # clean_state = deepcopy(state)
+        # state.update(vars.get_curr_slice(), doms.get_curr_val_slice())
         if self.is_complete(state):
             return doms.get_curr_val_slice(), state
         var = vars.get_next_var()
@@ -197,10 +212,15 @@ class CSP:
             # self.assign_val_to_var(val, self.variables[len(prev_vals)])
             state.update([var], [val])
             if self.constraints.are_all_satisfied(state):
-                solution = self.try_(deepcopy(vars), deepcopy(doms), clean_state)
+                solution = self.try_(vars, doms, state)
                 if solution:
                     return solution
         # self.reset_var(self.variables[len(prev_vals)])  #
+        # state.print_state()
+        vars.decrement()
+        doms.decrement()
+        state.update([var])
+        # print('reseted:')
         # state.print_state()
         return False
 

@@ -1,10 +1,12 @@
 from csp import CSP, Variables, Constraints, Domains
+from time import time
 
 
 class Board:
     def __init__(self, arr):
         self.state = self.arr_to_square(arr)
         self.size = int(len(arr) ** 0.5)
+        self.change_history = []
 
     def arr_to_square(self, arr):
         a = int(len(arr) ** 0.5)
@@ -13,13 +15,22 @@ class Board:
             output.append(arr[a * i:a * (i + 1)])
         return output
 
-    def update(self, vars, vals):
+    def update(self, vars, vals=None):
         if vars and vals:
-            for var, val in zip(vars,vals):
-                self.fill_square(var, val)
+            self.fill_square(var=vars[-1], val=vals[-1])
+        elif vars:
+            self.fill_square(vars[-1], '.')
 
     def fill_square(self, var, val):
         self.state[var[0]][var[1]] = str(val)
+        # if var not in self.change_history and val!=".":
+        #    self.change_history.append(var)
+
+    # def reset_last(self):
+    #     if len(self.change_history) > 0:
+    #         var = self.change_history[-1]
+    #         self.change_history = self.change_history[:-1]
+    #         self.fill_square(var, '.')
 
     def get_square(self, x, y):
         return self.state[x][y]
@@ -146,16 +157,27 @@ class Sudoku:
         return True
 
 
-s = Sudoku(1)
-s.puzzle.print_state()
-s.solution.print_state()
+# s = Sudoku(1)
+# s.puzzle.print_state()
+# s.solution.print_state()
+#
 # vars = Variables(s.create_variables())
 # doms = Domains(s.create_domains())
 # cons = Constraints([s.constraint_row, s.constraint_column, s.constraint_box])
-# csp = CSP(vars, doms, cons, s.solution_complete, s.puzzle)
-# sol = csp.backtrack_search()
-# print('solution:\n',sol[0])
-# print()
-# sol[1].print_state()
-# print()
-# s.solution.print_state()
+
+for i in range(1,44):
+
+    s = Sudoku(i)
+    vars = Variables(s.create_variables())
+    doms = Domains(s.create_domains())
+    cons = Constraints([s.constraint_row, s.constraint_column, s.constraint_box])
+    csp = CSP(vars, doms, cons, s.solution_complete, s.puzzle)
+
+    start = time()
+    sol = csp.backtrack_search()
+    end = time()
+
+    print('-----------------------\n',s.id,'- time:', end - start, '\n', sol[0])
+    sol[1].print_state()
+    print()
+    # s.solution.print_state()
