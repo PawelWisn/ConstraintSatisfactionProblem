@@ -1,5 +1,6 @@
 from csp import CSP, Variables, Constraints, Domains
 from time import time
+import matplotlib.pyplot as plt
 
 
 class Board:
@@ -23,14 +24,6 @@ class Board:
 
     def fill_square(self, var, val):
         self.state[var[0]][var[1]] = str(val)
-        # if var not in self.change_history and val!=".":
-        #    self.change_history.append(var)
-
-    # def reset_last(self):
-    #     if len(self.change_history) > 0:
-    #         var = self.change_history[-1]
-    #         self.change_history = self.change_history[:-1]
-    #         self.fill_square(var, '.')
 
     def get_square(self, x, y):
         return self.state[x][y]
@@ -157,27 +150,28 @@ class Sudoku:
         return True
 
 
-# s = Sudoku(1)
-# s.puzzle.print_state()
-# s.solution.print_state()
-#
-# vars = Variables(s.create_variables())
-# doms = Domains(s.create_domains())
-# cons = Constraints([s.constraint_row, s.constraint_column, s.constraint_box])
-
-for i in range(1,44):
+times = []
+for i in range(40, 45 + 1):
 
     s = Sudoku(i)
     vars = Variables(s.create_variables())
     doms = Domains(s.create_domains())
     cons = Constraints([s.constraint_row, s.constraint_column, s.constraint_box])
     csp = CSP(vars, doms, cons, s.solution_complete, s.puzzle)
-
+    # s.puzzle.print_state()
     start = time()
-    sol = csp.backtrack_search()
+    sol = csp.backtrackSearch()
     end = time()
+    times.append(end - start)
+    print('-----------------------\n', s.id, '- time:', end - start, '\n')
+    if sol:
+        print(sol[0], '\n')
+        sol[1].print_state()
 
-    print('-----------------------\n',s.id,'- time:', end - start, '\n', sol[0])
-    sol[1].print_state()
+    else:
+        print("NO SOLUTION")
     print()
     # s.solution.print_state()
+
+plt.bar([x for x in range(1, len(times) + 1)], times)
+plt.show()
