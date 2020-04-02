@@ -8,11 +8,10 @@ class Variables:
         self.size = len(self.vars)
 
     def getNextVar(self):
-        if self.ptrToCurr == self.size:
+        if self.ptrToCurr + 1 == self.size:
             return None
         self.ptrToCurr += 1
-        out = self.vars[self.ptrToCurr]
-        return out
+        return self.vars[self.ptrToCurr]
 
     # def get_prev_var(self):
     #     if self.ptr_to_curr - 1 < 0:
@@ -152,27 +151,25 @@ class Constraints:
 
 
 class CSP:
-    def __init__(self, variables, domains, constraints, isComplete, state):
+    def __init__(self, variables, domains, constraints, state):
         '''
         :param variables: object of Variables class
         :param domains: object of Domains class
         :param constraints: object of Constraints class
-        :param isComplete: function that checks if solution is found
         :param state: entry state, need to have an update method
         '''
         self.variables = variables
         self.domains = domains
         self.constraints = constraints
-        self.isComplete = isComplete
         self.state = state
 
     def backtrackSearch(self):
         return self.try_(self.variables, self.domains, self.state)
 
     def try_(self, vars, doms, state):
-        if self.isComplete(state):
-            return doms.getCurrValSlice(), state
         var = vars.getNextVar()
+        if var is None:
+            return doms.getCurrValSlice(), state
         for val in doms.getNextDom():
             state.update(var, val)
             if self.constraints.areAllSatisfied(state):

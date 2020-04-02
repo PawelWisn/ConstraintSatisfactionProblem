@@ -130,35 +130,6 @@ class Sudoku:
                                 numbers_in_box.append(number)
         return True
 
-    def solution_complete(self, state):
-        for row in state:  # rows
-            if '.' in row or len(set(row)) != state.size:
-                return False
-
-        for i in range(state.size):  # columns
-            number_set = set()
-            for j in range(state.size):
-                if state.get_square(j, i) == '.':
-                    return False
-                number_set.add(state.get_square(j, i))
-            if len(number_set) != state.size:
-                return False
-
-        box_size = int(state.size ** 0.5)  # boxes
-        for i in range(box_size):
-            for j in range(box_size):
-                number_set = set()
-                for boxrow in range(box_size):
-                    row_numbers = state.get_subrow(i * box_size + boxrow, j * box_size, (j + 1) * box_size)
-                    for number in row_numbers:
-                        if number == '.':
-                            return False
-                        number_set.add(number)
-                if len(number_set) != state.size:
-                    return False
-
-        return True
-
 
 times = []
 for i in range(1, 46 + 1):
@@ -167,13 +138,13 @@ for i in range(1, 46 + 1):
     vars = Variables(s.create_variables())
     doms = Domains(s.create_domains())
     cons = Constraints([s.constraint_row, s.constraint_column, s.constraint_box])
-    csp = CSP(vars, doms, cons, s.solution_complete, s.puzzle)
+    csp = CSP(vars, doms, cons, s.puzzle)
     # s.puzzle.print_state()
     start = time()
     sol = csp.backtrackSearch()
     end = time()
     times.append(end - start)
-    print('-----------------------\n', s.id, '- time:', end - start, '\n')
+    print('-----------------------\n', s.id, '- time: %.10f' % (end - start), '\n')
     if sol:
         print(sol[0], '\n')
         sol[1].print_state()
