@@ -1,13 +1,14 @@
 from csp import CSP, Variables, Constraints, Domains
 from time import time
 import matplotlib.pyplot as plt
+from collections import OrderedDict
 
 
 class Board:
     def __init__(self, arr):
         self.state = self.arr_to_square(arr)
         self.size = int(len(arr) ** 0.5)
-        self.change_history = []
+        self.change_history = OrderedDict()
 
     def arr_to_square(self, arr):
         a = int(len(arr) ** 0.5)
@@ -16,14 +17,23 @@ class Board:
             output.append(arr[a * i:a * (i + 1)])
         return output
 
-    def update(self, vars, vals=None):
-        if vars and vals:
-            self.fill_square(var=vars[-1], val=vals[-1])
-        elif vars:
-            self.fill_square(vars[-1], '.')
+    def update(self, var, val):
+        if var and val:
+            if var not in self.change_history.keys():
+                initial = self.get_square(var[0], var[1])
+                self.change_history[var] = (initial, val)
+            self.fill_square(var, val)
 
-    def fill_square(self, var, val):
-        self.state[var[0]][var[1]] = str(val)
+    def fill_square(self, var, value):
+        self.state[var[0]][var[1]] = str(value)
+
+    def downgrade(self):
+        try:
+            var, vals = self.change_history.popitem()
+            initial, _ = vals
+            self.fill_square(var, initial)
+        except KeyError:
+            pass
 
     def get_square(self, x, y):
         return self.state[x][y]
@@ -151,7 +161,7 @@ class Sudoku:
 
 
 times = []
-for i in range(40, 45 + 1):
+for i in range(1, 46 + 1):
 
     s = Sudoku(i)
     vars = Variables(s.create_variables())

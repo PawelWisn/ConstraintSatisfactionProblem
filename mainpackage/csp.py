@@ -174,14 +174,14 @@ class CSP:
             return doms.getCurrValSlice(), state
         var = vars.getNextVar()
         for val in doms.getNextDom():
-            state.update([var], [val])
+            state.update(var, val)
             if self.constraints.areAllSatisfied(state):
                 solution = self.try_(vars, doms, state)
                 if solution:
                     return solution
         vars.retreat()
         doms.retreat()
-        state.update([var])
+        state.downgrade()
         return False
 
     def forward(self, csp):
