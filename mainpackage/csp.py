@@ -176,9 +176,11 @@ class CSP:
                 solution = self.try_(vars, doms, state)
                 if solution:
                     return solution
+            # else:
+                # state.downgrade() # not for sudoku
         vars.retreat()
         doms.retreat()
-        state.downgrade()
+        state.downgrade() # for sudoku
         return False
 
     def forward(self, csp):

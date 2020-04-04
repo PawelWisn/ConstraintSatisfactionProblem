@@ -85,7 +85,7 @@ class Sudoku:
         for i in range(self.size):
             for j in range(self.size):
                 if self.puzzle.get_square(i, j) == '.':
-                    domains.append([str(x) for x in range(1, self.size + 1)])
+                    domains.append([str(x) if x<10 else chr(55+x) for x in range(1, self.size + 1)])
         return domains
 
     # def get_box_left_top_corner(self, i, j):  # > v (row, column)
@@ -132,14 +132,13 @@ class Sudoku:
 
 
 times = []
-for i in range(1, 46 + 1):
+for i in range(47, 47 + 1):
 
     s = Sudoku(i)
     vars = Variables(s.create_variables())
     doms = Domains(s.create_domains())
     cons = Constraints([s.constraint_row, s.constraint_column, s.constraint_box])
     csp = CSP(vars, doms, cons, s.puzzle)
-    # s.puzzle.print_state()
     start = time()
     sol = csp.backtrackSearch()
     end = time()
