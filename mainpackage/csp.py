@@ -24,9 +24,9 @@ class Variables:
         if self.ptrToCurr >= 0:
             self.ptrToCurr -= 1
 
-    def getCurrSlice(self):  # current included
-        if self.ptrToCurr >= 0:
-            return self.vars[0:self.ptrToCurr + 1]
+    # def getCurrSlice(self):  # current included
+    #     if self.ptrToCurr >= 0:
+    #         return self.vars[0:self.ptrToCurr + 1]
 
 
 class Domain:
@@ -114,10 +114,10 @@ class Domains:
         self.ptrToCurr = idx
         return self.domains[idx]
 
-    def getCurrValSlice(self):  # current included
+    def getValues(self):  # current included
         out = []
         if self.ptrToCurr >= 0:
-            for domain in self.domains[0:self.ptrToCurr + 1]:
+            for domain in self.domains:
                 out.append(domain.getCurrVal())
             return out
 
@@ -169,7 +169,7 @@ class CSP:
     def try_(self, vars, doms, state):
         var = vars.getNextVar()
         if var is None:
-            return doms.getCurrValSlice(), state
+            return doms.getValues(), state
         for val in doms.getNextDom():
             state.update(var, val)
             if self.constraints.areAllSatisfied(state):
@@ -178,9 +178,11 @@ class CSP:
                     return solution
             # else:
                 # state.downgrade() # not for sudoku
+
         vars.retreat()
         doms.retreat()
         state.downgrade() # for sudoku
+        # state.print_state()
         return False
 
     def forward(self, csp):

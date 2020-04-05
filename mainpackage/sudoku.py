@@ -71,6 +71,9 @@ class Sudoku:
             self.puzzle = Board(list(line[2]))
             self.solution = Board(list(line[3])) if len(line) == 4 else None
             self.size = int(len(list(line[2])) ** 0.5)
+            self.constraints = [self.constraint_row, self.constraint_column, self.constraint_box]
+            self.create_variables()
+            self.create_domains()
 
     def create_variables(self):
         variables = []
@@ -78,19 +81,65 @@ class Sudoku:
             for j in range(self.size):
                 if self.puzzle.get_square(i, j) == '.':
                     variables.append((i, j))
-        return variables
+        self.variables = variables
 
     def create_domains(self):
+        row_numbers = []
+        for row in self.puzzle:
+            numbers = []
+            for number in row:
+                if number != '.':
+                    numbers.append(number)
+            row_numbers.append(numbers)
+
+        column_numbers = []
+        for i in range(self.size):
+            numbers = []
+            for j in range(self.size):
+                number = self.puzzle.get_square(j, i)
+                if number != '.':
+                    numbers.append(number)
+            column_numbers.append(numbers)
+
+        box_numbers = {}
+        box_size = int(self.puzzle.size ** 0.5)
+        for i in range(box_size):
+            for j in range(box_size):
+                numbers = []
+                for boxrow in range(box_size):
+                    subrow_numbers = self.puzzle.get_subrow(i * box_size + boxrow, j * box_size, (j + 1) * box_size)
+                    for number in subrow_numbers:
+                        if number != '.':
+                            numbers.append(number)
+                box_numbers[(i, j)] = numbers
+
         domains = []
         for i in range(self.size):
             for j in range(self.size):
                 if self.puzzle.get_square(i, j) == '.':
-                    domains.append([str(x) if x<10 else chr(55+x) for x in range(1, self.size + 1)])
-        return domains
+                    domain = []
+                    candidates = [str(x) if x < 10 else chr(55 + x) for x in range(1, self.size + 1)]
+                    for x in candidates:
+                        if x not in row_numbers[i] and x not in column_numbers[j] and x not in box_numbers[
+                            self.get_box(i, j)]:
+                            domain.append(x)
+                    domains.append(domain)
 
-    # def get_box_left_top_corner(self, i, j):  # > v (row, column)
-    #     a = int(self.size ** 0.5)
-    #     return int(i // a * a), int(j // a * a)
+        self.domains = domains
+
+    def sort_variables(self, low_to_high=True):
+        zipped = zip(self.variables,self.domains)
+        self.variables = []
+        self.domains = []
+        for var, dom in sorted(zipped, key=lambda x: len(x[1]),reverse=not low_to_high):
+            self.variables.append(var)
+            self.domains.append(dom)
+            # print(var,dom)
+
+    def get_box(self, i, j):  # > v (row, column)
+        a = int(self.size ** 0.5)
+        out = int(i // a), int(j // a)
+        return out
 
     def constraint_row(self, state):
         for row in state:
@@ -131,27 +180,49 @@ class Sudoku:
         return True
 
 
+first = 3
+last = 13
 times = []
-for i in range(47, 47 + 1):
+times_s = []
+info = ["Unsorted",'Sorted']
+for run in range(2):
+    print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ RUN:",info[run])
+    for i in range(first, last + 1):
+        s = Sudoku(i)
+        if run==1:
+            s.sort_variables()
+        vars = Variables(s.variables)
+        doms = Domains(s.domains)
+        cons = Constraints(s.constraints)
+        csp = CSP(vars, doms, cons, s.puzzle)
 
-    s = Sudoku(i)
-    vars = Variables(s.create_variables())
-    doms = Domains(s.create_domains())
-    cons = Constraints([s.constraint_row, s.constraint_column, s.constraint_box])
-    csp = CSP(vars, doms, cons, s.puzzle)
-    start = time()
-    sol = csp.backtrackSearch()
-    end = time()
-    times.append(end - start)
-    print('-----------------------\n', s.id, '- time: %.10f' % (end - start), '\n')
-    if sol:
-        print(sol[0], '\n')
-        sol[1].print_state()
+        print('-----------------------------',s.id)
 
-    else:
-        print("NO SOLUTION")
-    print()
-    # s.solution.print_state()
+        #s.puzzle.print_state()
 
-plt.bar([x for x in range(1, len(times) + 1)], times)
-plt.show()
+        start = time()
+        sol = csp.backtrackSearch()
+        end = time()
+        if run==0:
+            times.append(end - start)
+        if run==1:
+            times_s.append(end - start)
+
+        print(info[run],': time: %.10f' % (end - start))
+
+        if sol:
+            #print(sol[0], '\n')
+            sol[1].print_state()
+        else:
+            print("NO SOLUTION")
+        print()
+        # s.solution.print_state()
+
+if len(times)>0:
+    plt.bar([x-0.1 for x in range(1, len(times) + 1)], times, width=0.2,align='center',color='blue',label="Unsorted")
+    plt.bar([x+0.1 for x in range(1, len(times) + 1)], times_s, width=0.2,align='center',color='orange',label="Sorted")
+    plt.xticks([x for x in range(first, last+1)])
+    plt.xlabel("Puzzle number")
+    plt.ylabel("Time [s]")
+    plt.legend()
+    plt.show()
