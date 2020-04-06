@@ -20,7 +20,7 @@ class Variables:
     #     out = self.vars[self.ptr_to_curr]
     #     return out
 
-    def retreat(self):
+    def stepBack(self):
         if self.ptrToCurr >= 0:
             self.ptrToCurr -= 1
 
@@ -101,7 +101,7 @@ class Domains:
     #     out = self.domains[self.ptr_to_curr]
     #     return out
 
-    def retreat(self):
+    def stepBack(self):
         if self.ptrToCurr >= 0:
             self.domains[self.ptrToCurr].reset()
             self.ptrToCurr -= 1
@@ -121,6 +121,10 @@ class Domains:
                 out.append(domain.getCurrVal())
             return out
 
+    def resetUpcoming(self):
+        for i in range(self.ptrToCurr+1,self.size):
+            self.domains[i].reset()
+
 
 class Constraint:
     def __init__(self, constraint):
@@ -135,13 +139,6 @@ class Constraints:
         self.constraints = [Constraint(x) for x in arr]
         self.ptrToCurr = ptr
 
-    def getNextCon(self):
-        if self.ptrToCurr + 1 >= len(self.constraints):
-            self.ptrToCurr = 0
-            return None
-        self.ptrToCurr += 1
-        out = self.constraints[self.ptrToCurr]
-        return out
 
     def areAllSatisfied(self, state):
         for constraint in self.constraints:
@@ -177,11 +174,11 @@ class CSP:
                 if solution:
                     return solution
             # else:
-                # state.downgrade() # not for sudoku
+            # state.downgrade() # not for sudoku
 
-        vars.retreat()
-        doms.retreat()
-        state.downgrade() # for sudoku
+        vars.stepBack()
+        doms.stepBack()
+        state.downgrade()  # for sudoku
         # state.print_state()
         return False
 
