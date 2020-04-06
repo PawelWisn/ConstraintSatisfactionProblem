@@ -128,31 +128,35 @@ class Sudoku:
         a = int(self.size ** 0.5)
         return int(i // a), int(j // a)
 
-    def constraints(self, domains):
-        for i in range(self.size):
-            numbers_in_row = [domains[i, j] for j in range(self.size) if domains[i, j] is not None]
-            if len(numbers_in_row) != len(set(numbers_in_row)):
-                return False
-            numbers_in_col = [domains[j, i] for j in range(self.size) if domains[j, i] is not None]
-            if len(numbers_in_col) != len(set(numbers_in_col)):
-                return False
+    def constraints(self, vars, domains):
+        row, col = vars[-1]  # new variable
+
+        numbers_in_row = []
+        numbers_in_col = []
+        for j in range(0, self.size):
+            if (row, j) in vars:  # row check
+                numbers_in_row.append(domains[(row, j)].getValue())
+            if (j, col) in vars:  # column check
+                numbers_in_col.append(domains[(j, col)].getValue())
+        if len(numbers_in_row) != len(set(numbers_in_row)):
+            return False
+        if len(numbers_in_col) != len(set(numbers_in_col)):
+            return False
 
         box_size = int(self.size ** 0.5)
-        for i in range(box_size):
-            for j in range(box_size):
-                numbers_in_box = []
-                for boxrow in range(box_size):
-                    x = i * box_size + boxrow
-                    y = j * box_size
-                    y2 = (j + 1) * box_size
-                    subrow_numbers = []
-                    for boxcol in range(y, y2):
-                        if domains[x, boxcol] is not None:
-                            subrow_numbers.append(domains[x, boxcol])
-                    numbers_in_box.extend(subrow_numbers)
-                if len(numbers_in_box) != len(set(numbers_in_box)):
-                    return False
+        box_x, box_y = self.get_box(row, col)
+        numbers_in_box = []
+        for boxrow in range(box_size):  # box check
+            x = box_x * box_size + boxrow
+            y = box_x * box_size
+            y2 = (box_y + 1) * box_size
+            for boxcol in range(y, y2):
+                if (x, boxcol) in vars:
+                    numbers_in_box.append(domains[(x, boxcol)].getValue())
+        if len(numbers_in_box) != len(set(numbers_in_box)):
+            return False
         return True
+
 
 s = Sudoku(1)
 s.puzzle.print_state()

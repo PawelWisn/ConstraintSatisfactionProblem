@@ -1,4 +1,5 @@
 from copy import deepcopy
+from collections import OrderedDict
 
 
 class Variables:
@@ -13,20 +14,13 @@ class Variables:
         self.ptrToCurr += 1
         return self.vars[self.ptrToCurr]
 
-    # def get_prev_var(self):
-    #     if self.ptr_to_curr - 1 < 0:
-    #         return None
-    #     self.ptr_to_curr -= 1
-    #     out = self.vars[self.ptr_to_curr]
-    #     return out
-
     def stepBack(self):
         if self.ptrToCurr >= 0:
             self.ptrToCurr -= 1
 
-    # def getCurrSlice(self):  # current included
-    #     if self.ptrToCurr >= 0:
-    #         return self.vars[0:self.ptrToCurr + 1]
+    def getVars(self):  # current included
+        if self.ptrToCurr >= 0:
+            return self.vars[0:self.ptrToCurr + 1]
 
 
 class Domain:
@@ -35,37 +29,37 @@ class Domain:
         self.valsCopy = [x for x in arr]
         self.ptrToCurr = ptr
         self.size = len(arr)
+        self.change_history = {}
 
-    def reset(self):
+    def undoLast(self, tag):
+        if tag in self.change_history:
+            self.vals, self.ptrToCurr, self.size = self.change_history[tag]
+            del self.change_history[tag]  # possibly to delete
+
+    def totalReset(self):
         self.vals = [x for x in self.valsCopy]
         self.size = len(self.vals)
         self.ptrToCurr = -1
+        self.change_history = {}
 
-    def removeByIdx(self, idx):
+    def removeByIdx(self, idx, tag):
+        self.change_history[tag] = (self.vals[:], self.ptrToCurr, self.size)
         self.vals = self.vals[:idx] + self.vals[idx + 1:]
         self.ptrToCurr = min(self.ptrToCurr, len(self.vals) - 1)
         self.size = len(self.vals)
 
-    def removeByVal(self, val):
-        try:
+    def removeByVal(self, val, tag):
+        if val in self.vals:
+            self.change_history[tag] = (self.vals[:], self.ptrToCurr, self.size)
             self.vals.remove(val)
             self.ptrToCurr = min(self.ptrToCurr, len(self.vals) - 1)
             self.size = len(self.vals)
-        except ValueError:
-            pass
-
-    # def get_next_val(self):
-    #     if self.ptr_to_curr == self.size:
-    #         return None
-    #     out = self.vals[self.ptr_to_curr]
-    #     self.ptr_to_curr += 1
-    #     return out
 
     def getByIdx(self, idx):
         self.ptrToCurr = idx
         return self.vals[idx]
 
-    def getCurrVal(self):
+    def getValue(self):
         if self.ptrToCurr >= 0:
             return self.vals[self.ptrToCurr]
 
@@ -85,10 +79,13 @@ class Domain:
 
 
 class Domains:
-    def __init__(self, arr, ptr=-1):
-        self.domains = [Domain(x) for x in arr]
+    def __init__(self, domains, ptr=-1):
+        self.domains = OrderedDict()
+        for key, values in domains.items():
+            self.domains[key] = Domain(values)
         self.ptrToCurr = ptr
         self.size = len(self.domains)
+        self.changeTags = []
 
     def getNextDom(self):
         if self.ptrToCurr == self.size:
@@ -97,16 +94,13 @@ class Domains:
         out = self.domains[self.ptrToCurr]
         return out
 
-    # def get_prev_dom(self):
-    #     if self.ptr_to_curr - 1 < 0:
-    #         return None
-    #     self.ptr_to_curr -= 1
-    #     out = self.domains[self.ptr_to_curr]
-    #     return out
+    def getDomain(self, var):
+        if self.ptrToCurr >= 0:
+            return self.domains[var]
 
     def stepBack(self):
         if self.ptrToCurr >= 0:
-            self.domains[self.ptrToCurr].reset()
+            self.domains[self.ptrToCurr].totalReset()
             self.ptrToCurr -= 1
 
     def getCurrDom(self):
@@ -124,32 +118,23 @@ class Domains:
                 out.append(domain.getCurrVal())
             return out
 
-    def resetUpcoming(self):
-        for i in range(self.ptrToCurr+1,self.size):
-            self.domains[i].reset()
+    def undoUpcoming(self):
+        for i in range(self.ptrToCurr + 1, self.size):
+            self.domains[i].undoLast()
 
     def anyUpcomingEmpty(self):
-        for i in range(self.ptrToCurr+1,self.size):
+        for i in range(self.ptrToCurr + 1, self.size):
             if self.domains[i].isEmpty():
                 return True
         return False
 
 
-class Constraint:
-    def __init__(self, constraint):
-        self.constraint = constraint
-
-    def isSatisfied(self, state):
-        return self.constraint(state)
-
-
 class Constraints:
-    def __init__(self, arr, ptr=0):
-        self.constraints = [Constraint(x) for x in arr]
+    def __init__(self, c, ptr=0):
+        self.constraints = c
         self.ptrToCurr = ptr
 
-
-    def areAllSatisfied(self, state):
+    def areSatisfied(self, ):
         for constraint in self.constraints:
             if not constraint.isSatisfied(state):
                 return False
