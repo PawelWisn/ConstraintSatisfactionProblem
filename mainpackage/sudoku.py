@@ -157,7 +157,7 @@ for run in range(len(info)):
     for i in range(first, last + 1, 1):
         i_arr.add(i)
         s = Sudoku(i)
-        # s.puzzle.print_state()
+        s.puzzle.print_state()
         if run == 1:
             s.sort_variables()
         if run == 2:
@@ -172,12 +172,11 @@ for run in range(len(info)):
         # s.puzzle.print_state()
 
         start = time()
-        sol = csp.backtrackSearch()
+        sol = csp.forward()
         end = time()
 
         if sol:
-            z = zip(sol[0], sol[1])
-            for x in z:
+            for x in sol:
                 s.puzzle.fill_square(x[0], x[1])
             s.puzzle.print_state()
         else:
