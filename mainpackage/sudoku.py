@@ -172,8 +172,8 @@ class Sudoku:
     #     return len(numbers_in_box) == len(set(numbers_in_box))
     #
 
-first = 35
-last = 40
+first = 47
+last = 47
 times = []
 times_s = []
 times_r = []

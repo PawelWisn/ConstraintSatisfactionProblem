@@ -184,29 +184,34 @@ class CSP:
         vars.stepBack()
         return False
 
-    # def _fc_check_failed(self, constraint, vars, domains):
-    #     for value in domains.getDomain(vars.getCurrVar()):
-    #         if not constraint.isSatisfied(vars.getActiveVars(), domains):
-    #             domains.getDomain(vars.getCurrVar()).removeByVal(value)
-    #     if domains.getDomain(vars.getCurrVar()).isEmpty():
-    #         return True
-    #     return False
-    #
-    # def forward(self):
-    #     return self._forward(self.variables, self.domains)
-    #
-    # def _forward(self, vars, domains):
-    #     var = vars.getNextVar()
-    #     if var is None:
-    #         return zip(vars.getActiveVars(), domains.getValues())
-    #     for value in domains.getDomain(var):
-    #         domainWhipeOutOccured = False
-    #         for constraint in self.constraints:
-    #             if self._fc_check_failed(constraint, vars, domains):
-    #                 domainWhipeOutOccured = True
-    #                 break
-    #         if not domainWhipeOutOccured:
-    #             return self._forward(vars, domains)
-    #         domains.getDomain(var).restore()
-    #     vars.stepBack()
-    #     return False
+    def _fc_check_failed(self, vars, var, domains):
+        for value in domains.getDomain(var):
+            vars.assignValue(var, value)
+            if not self.constraints.areAcceptable(vars.getVarValDict()):
+                domains.getDomain(var).removeByVal(value)
+        if domains.getDomain(var).isEmpty():
+            return True # Domain Wipe Out
+        return False
+
+    def forward(self):
+        return self._forward(self.variables, self.domains)
+
+    def _forward(self, vars, domains):
+        var = vars.getNextVar()
+        if var is None:
+            return vars.getVarValDict()
+        for value in domains.getDomain(var):
+            vars.assignValue(var, value)
+            if not self.constraints.areAcceptable(vars.getVarValDict()):
+                continue
+            nextVar = vars.getNextVar()
+            if nextVar is None:
+                continue
+            domainWhipeOutOccured = False
+            if self._fc_check_failed(vars,nextVar, domains):
+                domainWhipeOutOccured = True
+            if not domainWhipeOutOccured:
+                return self._forward(vars, domains)
+            domains.getDomain(var).restore()
+        vars.stepBack()
+        return False
