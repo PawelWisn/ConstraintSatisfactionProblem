@@ -1,4 +1,3 @@
-from copy import deepcopy
 from collections import OrderedDict
 
 
@@ -18,7 +17,7 @@ class Variables:
         if self.ptrToCurr >= 0:
             self.ptrToCurr -= 1
 
-    def getVars(self):  # current included
+    def getActiveVars(self):  # current included
         if self.ptrToCurr >= 0:
             return self.vars[0:self.ptrToCurr + 1]
 
@@ -144,9 +143,9 @@ class CSP:
     def try_(self, vars, domains):
         var = vars.getNextVar()
         if var is None:
-            return vars.getVars(), domains.getValues()
+            return vars.getActiveVars(), domains.getValues()
         for value in domains.getNextDomain(var):
-            if self.constraints.areAcceptable(vars.getVars(), domains):
+            if self.constraints.areAcceptable(vars.getActiveVars(), domains):
                 solution = self.try_(vars, domains)
                 if solution:
                     return solution

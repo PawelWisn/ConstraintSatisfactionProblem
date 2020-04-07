@@ -8,7 +8,6 @@ class Board:
     def __init__(self, arr):
         self.state = self.arr_to_square(arr)
         self.size = int(len(arr) ** 0.5)
-        self.change_history = OrderedDict()
 
     def arr_to_square(self, arr):
         a = int(len(arr) ** 0.5)
@@ -17,23 +16,8 @@ class Board:
             output.append(arr[a * i:a * (i + 1)])
         return output
 
-    # def update(self, var, val):
-    #     if var and val:
-    #         if var not in self.change_history.keys():
-    #             initial = self.get_square(var[0], var[1])
-    #             self.change_history[var] = (initial, val)
-    #         self.fill_square(var, val)
-
     def fill_square(self, var, value):
         self.state[var[0]][var[1]] = str(value)
-
-    # def downgrade(self):
-    #     try:
-    #         var, vals = self.change_history.popitem()
-    #         initial, _ = vals
-    #         self.fill_square(var, initial)
-    #     except KeyError:
-    #         pass
 
     def get_square(self, x, y):
         return self.state[x][y]
@@ -62,7 +46,7 @@ class Sudoku:
     def __init__(self, id, filename='src/Sudoku.csv'):
         super().__init__()
         with open(filename, 'r') as f:
-            f.readline()  # clear header
+            f.readline()
             for i in range(1, id):
                 f.readline()
             line = f.readline().strip().split(';')
@@ -126,7 +110,7 @@ class Sudoku:
         self.domains = OrderedDict(sorted(self.domains.items(), key=lambda x: len(x[1]), reverse=not low_to_high))
         self.variables = [var for var, dom in self.domains.items()]
 
-    def get_box(self, i, j):  # > v (row, column)
+    def get_box(self, i, j):
         a = int(self.size ** 0.5)
         return int(i // a), int(j // a)
 
@@ -145,14 +129,12 @@ class Sudoku:
         if len(numbers_in_col) != len(set(numbers_in_col)):
             return False
 
-        box_size = int(self.size ** 0.5)
+        box_size = int(self.size ** 0.5)  # box check
         box_x, box_y = self.get_box(row, col)
         numbers_in_box = []
-        for boxrow in range(box_size):  # box check
+        for boxrow in range(box_size):
             x = box_x * box_size + boxrow
-            y = box_y * box_size
-            y2 = (box_y + 1) * box_size
-            for boxcol in range(y, y2):
+            for boxcol in range(box_y * box_size, (box_y + 1) * box_size):
                 if (x, boxcol) in vars:
                     numbers_in_box.append(domains.getDomain((x, boxcol)).getValue())
         if len(numbers_in_box) != len(set(numbers_in_box)):
@@ -160,35 +142,18 @@ class Sudoku:
         return True
 
 
-# s = Sudoku(30)
-# s.puzzle.print_state()
-# # s.sort_variables()
-# vars = Variables(s.variables)
-# domains = Domains(s.domains)
-# constraints = Constraints(s.constraints)
-# csp = CSP(vars, domains, constraints)
-# result = csp.backtrackSearch()
-# print(result is not None)
-# z = zip(result[0],result[1])
-# for x in z:
-#     s.puzzle.fill_square(x[0],x[1])
-# s.puzzle.print_state()
-# pass
-
-
-
-first = 13
+first = 10
 last = 13
 times = []
 times_s = []
 times_r = []
 i_arr = set()
-info = ["Unsorted","Sorted"]
+info = ["Default", "Smallest domain"]
 for run in range(len(info)):
     # if run==0:
     #     continue
     print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ RUN:", info[run])
-    for i in range(first, last + 1,1):
+    for i in range(first, last + 1, 3):
         i_arr.add(i)
         s = Sudoku(i)
         if run == 1:
@@ -226,17 +191,17 @@ for run in range(len(info)):
         print('time: %.10f\n' % (end - start))
 
 if len(info) > 0:
-    if len(times)>0:
+    if len(times) > 0:
         plt.bar([x - 0.1 for x in list(i_arr)], times, width=0.2, align='center', color='blue',
-                label="Unsorted")
-    if len(info)>1:
-        if len(times_s)>0:
+                label=info[0])
+    if len(info) > 1:
+        if len(times_s) > 0:
             plt.bar([x + 0.1 for x in list(i_arr)], times_s, width=0.2, align='center', color='orange',
-                    label="Sorted")
-    if len(info)>2:
-        if len(times_r)>0:
+                    label=info[1])
+    if len(info) > 2:
+        if len(times_r) > 0:
             plt.bar([x + 0.3 for x in list(i_arr)], times_r, width=0.2, align='center', color='red',
-                    label="Sorted Backwards")
+                    label=info[2])
     plt.xticks(list(i_arr))
     plt.xlabel("Puzzle number")
     plt.ylabel("Time [s]")
