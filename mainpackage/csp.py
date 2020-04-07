@@ -6,6 +6,7 @@ class Variables:
         self.vars = [x for x in arr]
         self.ptrToCurr = ptr
         self.size = len(self.vars)
+        self.values = OrderedDict()
 
     def getCurrVar(self):
         if self.ptrToCurr >= 0:
@@ -17,9 +18,19 @@ class Variables:
         self.ptrToCurr += 1
         return self.vars[self.ptrToCurr]
 
+    def assignValue(self,var, value):
+        self.values[var] = value
+
+    def getValue(self, var):
+        return self.values[var]
+
+    def getVarValDict(self):
+        return self.values
+
     def stepBack(self):
         if self.ptrToCurr >= 0:
             self.ptrToCurr -= 1
+            self.values.popitem()
 
     def getActiveVars(self):  # current included
         if self.ptrToCurr >= 0:
@@ -103,8 +114,8 @@ class Domains:
     #     if self.ptrToCurr >= 0:
     #         return self.domains[self.ptrToCurr]
 
-    def getValues(self):  # current included
-        return [value.getValue() for var, value in self.domains.items()]
+    # def getValues(self):  # current included
+    #     return [value.getValue() for var, value in self.domains.items()]
 
     # def undoUpcoming(self):
     #     for i in range(self.ptrToCurr + 1, self.size):
@@ -121,8 +132,8 @@ class Constraint:
     def __init__(self, c):
         self.constraint = c
 
-    def isSatisfied(self, vars, domains):
-        return self.constraint(vars, domains)
+    def isSatisfied(self, vars):
+        return self.constraint(vars)
 
 
 class Constraints:
@@ -130,9 +141,9 @@ class Constraints:
         self.constraints = [Constraint(c) for c in constraints]
         self.size = len(self.constraints)
 
-    def areAcceptable(self, vars, domains):
+    def areAcceptable(self, vars):
         for c in self.constraints:
-            if not c.isSatisfied(vars, domains):
+            if not c.isSatisfied(vars):
                 return False
         return True
 
@@ -161,40 +172,41 @@ class CSP:
     def _try(self, vars, domains):
         var = vars.getNextVar()
         if var is None:
-            return zip(vars.getActiveVars(), domains.getValues())
+            return vars.getVarValDict()
         for value in domains.getDomain(var):
-            if self.constraints.areAcceptable(vars.getActiveVars(), domains):
+            vars.assignValue(var, value)
+            if self.constraints.areAcceptable(vars.getVarValDict()):
                 solution = self._try(vars, domains)
                 if solution:
                     return solution
 
-        vars.stepBack()
         domains.getDomain(var).restore()
-        return False
-
-    def _fc_check_failed(self, constraint, vars, domains):
-        for value in domains.getDomain(vars.getCurrVar()):
-            if not constraint.isSatisfied(vars.getActiveVars(), domains):
-                domains.getDomain(vars.getCurrVar()).removeByVal(value)
-        if domains.getDomain(vars.getCurrVar()).isEmpty():
-            return True
-        return False
-
-    def forward(self):
-        return self._forward(self.variables, self.domains)
-
-    def _forward(self, vars, domains):
-        var = vars.getNextVar()
-        if var is None:
-            return zip(vars.getActiveVars(), domains.getValues())
-        for value in domains.getDomain(var):
-            domainWhipeOutOccured = False
-            for constraint in self.constraints:
-                if self._fc_check_failed(constraint, vars, domains):
-                    domainWhipeOutOccured = True
-                    break
-            if not domainWhipeOutOccured:
-                return self._forward(vars, domains)
-            domains.getDomain(var).restore()
         vars.stepBack()
         return False
+
+    # def _fc_check_failed(self, constraint, vars, domains):
+    #     for value in domains.getDomain(vars.getCurrVar()):
+    #         if not constraint.isSatisfied(vars.getActiveVars(), domains):
+    #             domains.getDomain(vars.getCurrVar()).removeByVal(value)
+    #     if domains.getDomain(vars.getCurrVar()).isEmpty():
+    #         return True
+    #     return False
+    #
+    # def forward(self):
+    #     return self._forward(self.variables, self.domains)
+    #
+    # def _forward(self, vars, domains):
+    #     var = vars.getNextVar()
+    #     if var is None:
+    #         return zip(vars.getActiveVars(), domains.getValues())
+    #     for value in domains.getDomain(var):
+    #         domainWhipeOutOccured = False
+    #         for constraint in self.constraints:
+    #             if self._fc_check_failed(constraint, vars, domains):
+    #                 domainWhipeOutOccured = True
+    #                 break
+    #         if not domainWhipeOutOccured:
+    #             return self._forward(vars, domains)
+    #         domains.getDomain(var).restore()
+    #     vars.stepBack()
+    #     return False

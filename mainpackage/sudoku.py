@@ -114,42 +114,71 @@ class Sudoku:
         a = int(self.size ** 0.5)
         return int(i // a), int(j // a)
 
-    def constraint_row(self, vars, domains):
-        row, col = vars[-1]  # new variable
+    def constraint_row(self, vars):
+        row, col = list(vars.items())[-1][0]  # new variable
         numbers_in_row = []
         for j in range(0, self.size):
-            if (row, j) in vars:  # row check
-                numbers_in_row.append(domains.getDomain((row, j)).getValue())
+            if (row, j) in vars.keys():  # row check
+                numbers_in_row.append(vars[(row,j)])
         return len(numbers_in_row) == len(set(numbers_in_row))
 
-    def constraint_col(self, vars, domains):
-        row, col = vars[-1]  # new variable
+    def constraint_col(self, vars):
+        row, col = list(vars.items())[-1][0]  # new variable
         numbers_in_col = []
-        for j in range(0, self.size):
-            if (j, col) in vars:  # column check
-                numbers_in_col.append(domains.getDomain((j, col)).getValue())
+        for i in range(0, self.size):
+            if (i, col) in vars.keys():  # column check
+                numbers_in_col.append(vars[(i, col)])
         return len(numbers_in_col) == len(set(numbers_in_col))
 
-    def constraint_box(self, vars, domains):
-        row, col = vars[-1]  # new variable
+    def constraint_box(self, vars):
+        row, col = list(vars.items())[-1][0]  # new variable
         box_size = int(self.size ** 0.5)  # box check
         box_x, box_y = self.get_box(row, col)
         numbers_in_box = []
         for boxrow in range(box_size):
             x = box_x * box_size + boxrow
             for boxcol in range(box_y * box_size, (box_y + 1) * box_size):
-                if (x, boxcol) in vars:
-                    numbers_in_box.append(domains.getDomain((x, boxcol)).getValue())
+                if (x, boxcol) in vars.keys():
+                    numbers_in_box.append(vars[(x, boxcol)])
         return len(numbers_in_box) == len(set(numbers_in_box))
 
+    #
+    # def constraint_row(self, vars, domains):
+    #     row, col = vars[-1]  # new variable
+    #     numbers_in_row = []
+    #     for j in range(0, self.size):
+    #         if (row, j) in vars:  # row check
+    #             numbers_in_row.append(domains.getDomain((row, j)).getValue())
+    #     return len(numbers_in_row) == len(set(numbers_in_row))
+    #
+    # def constraint_col(self, vars, domains):
+    #     row, col = vars[-1]  # new variable
+    #     numbers_in_col = []
+    #     for j in range(0, self.size):
+    #         if (j, col) in vars:  # column check
+    #             numbers_in_col.append(domains.getDomain((j, col)).getValue())
+    #     return len(numbers_in_col) == len(set(numbers_in_col))
+    #
+    # def constraint_box(self, vars, domains):
+    #     row, col = vars[-1]  # new variable
+    #     box_size = int(self.size ** 0.5)  # box check
+    #     box_x, box_y = self.get_box(row, col)
+    #     numbers_in_box = []
+    #     for boxrow in range(box_size):
+    #         x = box_x * box_size + boxrow
+    #         for boxcol in range(box_y * box_size, (box_y + 1) * box_size):
+    #             if (x, boxcol) in vars:
+    #                 numbers_in_box.append(domains.getDomain((x, boxcol)).getValue())
+    #     return len(numbers_in_box) == len(set(numbers_in_box))
+    #
 
-first = 13
-last = 13
+first = 35
+last = 40
 times = []
 times_s = []
 times_r = []
 i_arr = set()
-info = ["Default"]
+info = ["Backtrack", "Backtrack - Smallest Domain First"]
 for run in range(len(info)):
     # if run==0:
     #     continue
@@ -157,7 +186,7 @@ for run in range(len(info)):
     for i in range(first, last + 1, 1):
         i_arr.add(i)
         s = Sudoku(i)
-        s.puzzle.print_state()
+
         if run == 1:
             s.sort_variables()
         if run == 2:
@@ -169,15 +198,16 @@ for run in range(len(info)):
 
         print(info[run], '-----------------------------', s.id)
 
-        # s.puzzle.print_state()
+        s.puzzle.print_state()
 
         start = time()
-        sol = csp.forward()
+        # sol = csp.forward()
+        sol = csp.backtrackSearch()
         end = time()
 
         if sol:
-            for x in sol:
-                s.puzzle.fill_square(x[0], x[1])
+            for x, y in sol.items():
+                s.puzzle.fill_square(x, y)
             s.puzzle.print_state()
         else:
             print("NO SOLUTION")
