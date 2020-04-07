@@ -72,7 +72,7 @@ class Domain:
     def __next__(self):
         if self.ptrToCurr + 1 < self.size:
             self.ptrToCurr += 1
-            return self.getValue()
+            return self.vals[self.ptrToCurr]
         else:
             raise StopIteration
 
@@ -85,13 +85,6 @@ class Domains:
         self.ptrToCurr = ptr
         self.size = len(self.domains)
         self.changeTags = []
-
-    def getNextDomain(self, var):
-        if self.ptrToCurr == self.size:
-            return None
-        self.ptrToCurr += 1
-        out = self.domains[var]
-        return out
 
     def getDomain(self, var):
         return self.domains[var]
@@ -123,12 +116,23 @@ class Domains:
         return False
 
 
+class Constraint:
+    def __init__(self, c):
+        self.constraint = c
+
+    def isSatisfied(self, vars, domains):
+        return self.constraint(vars, domains)
+
+
 class Constraints:
     def __init__(self, constraints):
-        self.constraints = constraints
+        self.constraints = [Constraint(c) for c in constraints]
 
     def areAcceptable(self, vars, domains):
-        return self.constraints(vars, domains)
+        for c in self.constraints:
+            if not c.isSatisfied(vars, domains):
+                return False
+        return True
 
 
 class CSP:
@@ -136,23 +140,28 @@ class CSP:
         self.variables = variables
         self.domains = domains
         self.constraints = constraints
+        self.tag = 0
 
     def backtrackSearch(self):
-        return self.try_(self.variables, self.domains)
+        return self._try(self.variables, self.domains)
 
-    def try_(self, vars, domains):
+    def _try(self, vars, domains):
         var = vars.getNextVar()
         if var is None:
             return vars.getActiveVars(), domains.getValues()
-        for value in domains.getNextDomain(var):
+        for value in domains.getDomain(var):
             if self.constraints.areAcceptable(vars.getActiveVars(), domains):
-                solution = self.try_(vars, domains)
+                solution = self._try(vars, domains)
                 if solution:
                     return solution
 
         vars.stepBack()
-        domains.stepBack(var)
+        domains.getDomain(var).totalReset()
         return False
 
-    def forward(self, vars, doms, state):
-        pass
+    def forward(self, vars, domains):
+        var = vars.getNextVar()
+        if var is None:
+            return vars.getActiveVars(), domains.getValues()
+        for value in domains.getNextDomain(var):
+            DomainWhipeOutOccured = False

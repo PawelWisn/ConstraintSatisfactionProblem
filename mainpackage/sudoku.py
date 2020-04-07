@@ -114,21 +114,24 @@ class Sudoku:
         a = int(self.size ** 0.5)
         return int(i // a), int(j // a)
 
-    def constraints(self, vars, domains):
+    def constraint_row(self, vars, domains):
         row, col = vars[-1]  # new variable
-
         numbers_in_row = []
-        numbers_in_col = []
         for j in range(0, self.size):
             if (row, j) in vars:  # row check
                 numbers_in_row.append(domains.getDomain((row, j)).getValue())
+        return len(numbers_in_row) == len(set(numbers_in_row))
+
+    def constraint_col(self, vars, domains):
+        row, col = vars[-1]  # new variable
+        numbers_in_col = []
+        for j in range(0, self.size):
             if (j, col) in vars:  # column check
                 numbers_in_col.append(domains.getDomain((j, col)).getValue())
-        if len(numbers_in_row) != len(set(numbers_in_row)):
-            return False
-        if len(numbers_in_col) != len(set(numbers_in_col)):
-            return False
+        return len(numbers_in_col) == len(set(numbers_in_col))
 
+    def constraint_box(self, vars, domains):
+        row, col = vars[-1]  # new variable
         box_size = int(self.size ** 0.5)  # box check
         box_x, box_y = self.get_box(row, col)
         numbers_in_box = []
@@ -137,32 +140,31 @@ class Sudoku:
             for boxcol in range(box_y * box_size, (box_y + 1) * box_size):
                 if (x, boxcol) in vars:
                     numbers_in_box.append(domains.getDomain((x, boxcol)).getValue())
-        if len(numbers_in_box) != len(set(numbers_in_box)):
-            return False
-        return True
+        return len(numbers_in_box) == len(set(numbers_in_box))
 
 
-first = 10
+first = 13
 last = 13
 times = []
 times_s = []
 times_r = []
 i_arr = set()
-info = ["Default", "Smallest domain"]
+info = ["Default"]
 for run in range(len(info)):
     # if run==0:
     #     continue
     print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ RUN:", info[run])
-    for i in range(first, last + 1, 3):
+    for i in range(first, last + 1, 1):
         i_arr.add(i)
         s = Sudoku(i)
+        # s.puzzle.print_state()
         if run == 1:
             s.sort_variables()
         if run == 2:
             s.sort_variables(False)
         vars = Variables(s.variables)
         domains = Domains(s.domains)
-        constraints = Constraints(s.constraints)
+        constraints = Constraints([s.constraint_row, s.constraint_col, s.constraint_box])
         csp = CSP(vars, domains, constraints)
 
         print(info[run], '-----------------------------', s.id)
