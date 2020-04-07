@@ -1,4 +1,4 @@
-from csp import CSP, Variables, Constraints, Domains
+from mainpackage.csp import CSP, Variables, Constraints, Domains
 from time import time
 import matplotlib.pyplot as plt
 from collections import OrderedDict
@@ -17,23 +17,23 @@ class Board:
             output.append(arr[a * i:a * (i + 1)])
         return output
 
-    def update(self, var, val):
-        if var and val:
-            if var not in self.change_history.keys():
-                initial = self.get_square(var[0], var[1])
-                self.change_history[var] = (initial, val)
-            self.fill_square(var, val)
+    # def update(self, var, val):
+    #     if var and val:
+    #         if var not in self.change_history.keys():
+    #             initial = self.get_square(var[0], var[1])
+    #             self.change_history[var] = (initial, val)
+    #         self.fill_square(var, val)
 
     def fill_square(self, var, value):
         self.state[var[0]][var[1]] = str(value)
 
-    def downgrade(self):
-        try:
-            var, vals = self.change_history.popitem()
-            initial, _ = vals
-            self.fill_square(var, initial)
-        except KeyError:
-            pass
+    # def downgrade(self):
+    #     try:
+    #         var, vals = self.change_history.popitem()
+    #         initial, _ = vals
+    #         self.fill_square(var, initial)
+    #     except KeyError:
+    #         pass
 
     def get_square(self, x, y):
         return self.state[x][y]
@@ -71,19 +71,9 @@ class Sudoku:
             self.puzzle = Board(list(line[2]))
             self.solution = Board(list(line[3])) if len(line) == 4 else None
             self.size = int(len(list(line[2])) ** 0.5)
-            self.constraints = [self.constraint_box, self.constraint_row, self.constraint_column]
-            self.create_variables()
-            self.create_domains()
+            self.create_vars_doms()
 
-    def create_variables(self):
-        variables = []
-        for i in range(self.size):
-            for j in range(self.size):
-                if self.puzzle.get_square(i, j) == '.':
-                    variables.append((i, j))
-        self.variables = variables
-
-    def create_domains(self):
+    def create_vars_doms(self):
         row_numbers = []
         for row in self.puzzle:
             numbers = []
@@ -113,7 +103,8 @@ class Sudoku:
                             numbers.append(number)
                 box_numbers[(i, j)] = numbers
 
-        domains = []
+        domains = OrderedDict()
+        variables = []
         for i in range(self.size):
             for j in range(self.size):
                 if self.puzzle.get_square(i, j) == '.':
@@ -123,65 +114,71 @@ class Sudoku:
                         if x not in row_numbers[i] and x not in column_numbers[j] and x not in box_numbers[
                             self.get_box(i, j)]:
                             domain.append(x)
-                    domains.append(domain)
+                    domains[(i, j)] = domain
+                else:
+                    domains[(i, j)] = [self.puzzle.get_square(i, j)]
+                variables.append((i, j))
 
+        self.variables = variables
         self.domains = domains
 
     def sort_variables(self, low_to_high=True):
-        zipped = zip(self.variables, self.domains)
-        self.variables = []
-        self.domains = []
-        for var, dom in sorted(zipped, key=lambda x: len(x[1]), reverse=not low_to_high):
-            self.variables.append(var)
-            self.domains.append(dom)
-            # print(var,dom)
+        self.domains = OrderedDict(sorted(self.domains.items(), key=lambda x: len(x[1]), reverse=not low_to_high))
+        self.variables = [var for var, dom in self.domains.items()]
 
     def get_box(self, i, j):  # > v (row, column)
         a = int(self.size ** 0.5)
-        out = int(i // a), int(j // a)
-        return out
+        return int(i // a), int(j // a)
 
-    def constraint_row(self, state):
-        for row in state:
-            numbers_in_row = []
-            for number in row:
-                if number != '.':
-                    if number in numbers_in_row:
-                        return False
-                    else:
-                        numbers_in_row.append(number)
-        return True
+    def constraints(self, vars, domains):
+        row, col = vars[-1]  # new variable
 
-    def constraint_column(self, state):
-        for i in range(state.size):
-            numbers_in_col = []
-            for j in range(state.size):
-                number = state.get_square(j, i)
-                if number != '.':
-                    if number in numbers_in_col:
-                        return False
-                    else:
-                        numbers_in_col.append(number)
-        return True
+        numbers_in_row = []
+        numbers_in_col = []
+        for j in range(0, self.size):
+            if (row, j) in vars:  # row check
+                numbers_in_row.append(domains.getDomain((row, j)).getValue())
+            if (j, col) in vars:  # column check
+                numbers_in_col.append(domains.getDomain((j, col)).getValue())
+        if len(numbers_in_row) != len(set(numbers_in_row)):
+            return False
+        if len(numbers_in_col) != len(set(numbers_in_col)):
+            return False
 
-    def constraint_box(self, state):
-        box_size = int(state.size ** 0.5)
-        for i in range(box_size):
-            for j in range(box_size):
-                numbers_in_box = []
-                for boxrow in range(box_size):
-                    subrow_numbers = state.get_subrow(i * box_size + boxrow, j * box_size, (j + 1) * box_size)
-                    for number in subrow_numbers:
-                        if number != '.':
-                            if number in numbers_in_box:
-                                return False
-                            else:
-                                numbers_in_box.append(number)
+        box_size = int(self.size ** 0.5)
+        box_x, box_y = self.get_box(row, col)
+        numbers_in_box = []
+        for boxrow in range(box_size):  # box check
+            x = box_x * box_size + boxrow
+            y = box_y * box_size
+            y2 = (box_y + 1) * box_size
+            for boxcol in range(y, y2):
+                if (x, boxcol) in vars:
+                    numbers_in_box.append(domains.getDomain((x, boxcol)).getValue())
+        if len(numbers_in_box) != len(set(numbers_in_box)):
+            return False
         return True
 
 
-first = 3
-last = 3
+# s = Sudoku(30)
+# s.puzzle.print_state()
+# # s.sort_variables()
+# vars = Variables(s.variables)
+# domains = Domains(s.domains)
+# constraints = Constraints(s.constraints)
+# csp = CSP(vars, domains, constraints)
+# result = csp.backtrackSearch()
+# print(result is not None)
+# z = zip(result[0],result[1])
+# for x in z:
+#     s.puzzle.fill_square(x[0],x[1])
+# s.puzzle.print_state()
+# pass
+
+
+
+first = 13
+last = 13
 times = []
 times_s = []
 times_r = []
@@ -191,7 +188,7 @@ for run in range(len(info)):
     # if run==0:
     #     continue
     print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ RUN:", info[run])
-    for i in range(first, last + 1,3):
+    for i in range(first, last + 1,1):
         i_arr.add(i)
         s = Sudoku(i)
         if run == 1:
@@ -199,9 +196,9 @@ for run in range(len(info)):
         if run == 2:
             s.sort_variables(False)
         vars = Variables(s.variables)
-        doms = Domains(s.domains)
-        cons = Constraints(s.constraints)
-        csp = CSP(vars, doms, cons, s.puzzle)
+        domains = Domains(s.domains)
+        constraints = Constraints(s.constraints)
+        csp = CSP(vars, domains, constraints)
 
         print(info[run], '-----------------------------', s.id)
 
@@ -210,6 +207,15 @@ for run in range(len(info)):
         start = time()
         sol = csp.backtrackSearch()
         end = time()
+
+        if sol:
+            z = zip(sol[0], sol[1])
+            for x in z:
+                s.puzzle.fill_square(x[0], x[1])
+            s.puzzle.print_state()
+        else:
+            print("NO SOLUTION")
+
         if run == 0:
             times.append(end - start)
         if run == 1:
@@ -217,13 +223,7 @@ for run in range(len(info)):
         if run == 2:
             times_r.append(end - start)
 
-        print('time: %.10f' % (end - start))
-
-        if sol:
-            # print(sol[0], '\n')
-            sol[1].print_state()
-        else:
-            print("NO SOLUTION")
+        print('time: %.10f\n' % (end - start))
 
 if len(info) > 0:
     if len(times)>0:
