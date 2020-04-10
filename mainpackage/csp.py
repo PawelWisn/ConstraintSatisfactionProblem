@@ -18,7 +18,7 @@ class Variables:
         self.ptrToCurr += 1
         return self.vars[self.ptrToCurr]
 
-    def assignValue(self,var, value):
+    def assignValue(self, var, value):
         self.values[var] = value
 
     def getValue(self, var):
@@ -41,6 +41,7 @@ class Domain:
     def __init__(self, arr, ptr=-1):
         self.vals = [x for x in arr]
         self.valsCopy = [x for x in arr]
+        self.active = [True for _ in arr]
         self.ptrToCurr = ptr
         self.size = len(arr)
         # self.change_history = {}
@@ -50,12 +51,17 @@ class Domain:
     #         self.vals, self.ptrToCurr, self.size = self.change_history[tag]
     #         del self.change_history[tag]  # possibly to delete
 
-    def restore(self, ptr=True):
-        self.vals = [x for x in self.valsCopy]
-        self.size = len(self.vals)
-        if ptr:
-            self.ptrToCurr = -1
+    def restore(self):
+        self.active = [True for _ in self.vals]
+        self.ptrToCurr = -1
+        # self.vals = [x for x in self.valsCopy]
+        # self.size = len(self.vals)
+        # if ptr:
+        #     self.ptrToCurr = -1
         # self.change_history = {}
+
+    def x(self):
+        pass
 
     # def removeByIdx(self, idx, tag):
     #     self.change_history[tag] = (self.vals[:], self.ptrToCurr, self.size)
@@ -64,11 +70,22 @@ class Domain:
     #     self.size = len(self.vals)
 
     def removeByVal(self, val):
-        if val in self.vals:
-            # self.change_history[tag] = (self.vals[:], self.ptrToCurr, self.size)
-            self.vals.remove(val)
-            self.ptrToCurr = min(self.ptrToCurr, len(self.vals) - 1)
-            self.size = len(self.vals)
+        try:
+            val_idx = self.vals.index(val)
+        except ValueError:
+            pass
+        else:
+            self.active[val_idx] = False
+            if val_idx == self.ptrToCurr:
+                if self.ptrToCurr == self.size - 1:
+                    self.ptrToCurr -= 1
+                else:
+                    self.ptrToCurr += 1
+        # if val in self.vals:
+        #     # self.change_history[tag] = (self.vals[:], self.ptrToCurr, self.size)
+        #     self.vals.remove(val)
+        #     self.ptrToCurr = min(self.ptrToCurr, len(self.vals) - 1)
+        #     self.size = len(self.vals)
 
     # def getByIdx(self, idx):
     #     self.ptrToCurr = idx
@@ -79,18 +96,22 @@ class Domain:
             return self.vals[self.ptrToCurr]
 
     def isEmpty(self):
-        return self.size == 0
+        return sum(self.active) == 0
 
     def __iter__(self):
         self.ptrToCurr = -1
         return self
 
     def __next__(self):
-        if self.ptrToCurr + 1 < self.size:
-            self.ptrToCurr += 1
-            return self.vals[self.ptrToCurr]
-        else:
+        self.ptrToCurr += 1
+        if self.ptrToCurr == self.size:
             raise StopIteration
+        while self.active[self.ptrToCurr] == False:
+            self.ptrToCurr += 1
+            if self.ptrToCurr == self.size:
+                raise StopIteration
+        return self.vals[self.ptrToCurr]
+
 
 
 class Domains:
@@ -190,7 +211,7 @@ class CSP:
             if not self.constraints.areAcceptable(vars.getVarValDict()):
                 domains.getDomain(var).removeByVal(value)
         if domains.getDomain(var).isEmpty():
-            return True # Domain Wipe Out
+            return True  # Domain Wipe Out
         return False
 
     def forward(self):
@@ -208,7 +229,7 @@ class CSP:
             if nextVar is None:
                 continue
             domainWhipeOutOccured = False
-            if self._fc_check_failed(vars,nextVar, domains):
+            if self._fc_check_failed(vars, nextVar, domains):
                 domainWhipeOutOccured = True
             if not domainWhipeOutOccured:
                 return self._forward(vars, domains)

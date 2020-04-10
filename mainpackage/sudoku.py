@@ -142,38 +142,9 @@ class Sudoku:
                     numbers_in_box.append(vars[(x, boxcol)])
         return len(numbers_in_box) == len(set(numbers_in_box))
 
-    #
-    # def constraint_row(self, vars, domains):
-    #     row, col = vars[-1]  # new variable
-    #     numbers_in_row = []
-    #     for j in range(0, self.size):
-    #         if (row, j) in vars:  # row check
-    #             numbers_in_row.append(domains.getDomain((row, j)).getValue())
-    #     return len(numbers_in_row) == len(set(numbers_in_row))
-    #
-    # def constraint_col(self, vars, domains):
-    #     row, col = vars[-1]  # new variable
-    #     numbers_in_col = []
-    #     for j in range(0, self.size):
-    #         if (j, col) in vars:  # column check
-    #             numbers_in_col.append(domains.getDomain((j, col)).getValue())
-    #     return len(numbers_in_col) == len(set(numbers_in_col))
-    #
-    # def constraint_box(self, vars, domains):
-    #     row, col = vars[-1]  # new variable
-    #     box_size = int(self.size ** 0.5)  # box check
-    #     box_x, box_y = self.get_box(row, col)
-    #     numbers_in_box = []
-    #     for boxrow in range(box_size):
-    #         x = box_x * box_size + boxrow
-    #         for boxcol in range(box_y * box_size, (box_y + 1) * box_size):
-    #             if (x, boxcol) in vars:
-    #                 numbers_in_box.append(domains.getDomain((x, boxcol)).getValue())
-    #     return len(numbers_in_box) == len(set(numbers_in_box))
-    #
 
-first = 47
-last = 47
+first = 13
+last = 13
 times = []
 times_s = []
 times_r = []
