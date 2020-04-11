@@ -18,6 +18,9 @@ class Variables:
         self.ptrToCurr += 1
         return self.vars[self.ptrToCurr]
 
+    def hasValue(self,var):
+        return var in self.values.keys()
+
     def assignValue(self, var, value):
         self.values[var] = value
 
@@ -27,10 +30,11 @@ class Variables:
     def getVarValDict(self):
         return self.values
 
-    def stepBack(self):
+    def stepBack(self,pop=True):
         if self.ptrToCurr >= 0:
             self.ptrToCurr -= 1
-            self.values.popitem()
+            if pop:
+                self.values.popitem()
 
     def getActiveVars(self):  # current included
         if self.ptrToCurr >= 0:
@@ -50,6 +54,13 @@ class Domain:
     #     if tag in self.change_history:
     #         self.vals, self.ptrToCurr, self.size = self.change_history[tag]
     #         del self.change_history[tag]  # possibly to delete
+    def undoRemoval(self, val):
+        try:
+            val_idx = self.vals.index(val)
+        except ValueError:
+            pass
+        else:
+            self.active[val_idx] = True
 
     def restore(self):
         self.active = [True for _ in self.vals]
@@ -60,16 +71,13 @@ class Domain:
         #     self.ptrToCurr = -1
         # self.change_history = {}
 
-    def x(self):
-        pass
-
     # def removeByIdx(self, idx, tag):
     #     self.change_history[tag] = (self.vals[:], self.ptrToCurr, self.size)
     #     self.vals = self.vals[:idx] + self.vals[idx + 1:]
     #     self.ptrToCurr = min(self.ptrToCurr, len(self.vals) - 1)
     #     self.size = len(self.vals)
 
-    def removeByVal(self, val):
+    def removeVal(self, val):
         try:
             val_idx = self.vals.index(val)
         except ValueError:
@@ -106,12 +114,9 @@ class Domain:
         self.ptrToCurr += 1
         if self.ptrToCurr == self.size:
             raise StopIteration
-        while self.active[self.ptrToCurr] == False:
-            self.ptrToCurr += 1
-            if self.ptrToCurr == self.size:
-                raise StopIteration
+        if self.active[self.ptrToCurr] == False:
+            return self.__next__()
         return self.vals[self.ptrToCurr]
-
 
 
 class Domains:
@@ -205,15 +210,6 @@ class CSP:
         vars.stepBack()
         return False
 
-    def _fc_check_failed(self, vars, var, domains):
-        for value in domains.getDomain(var):
-            vars.assignValue(var, value)
-            if not self.constraints.areAcceptable(vars.getVarValDict()):
-                domains.getDomain(var).removeByVal(value)
-        if domains.getDomain(var).isEmpty():
-            return True  # Domain Wipe Out
-        return False
-
     def forward(self):
         return self._forward(self.variables, self.domains)
 
@@ -221,18 +217,19 @@ class CSP:
         var = vars.getNextVar()
         if var is None:
             return vars.getVarValDict()
+        if domains.getDomain(var).isEmpty():
+            vars.stepBack(False)
+            return False
         for value in domains.getDomain(var):
             vars.assignValue(var, value)
             if not self.constraints.areAcceptable(vars.getVarValDict()):
                 continue
-            nextVar = vars.getNextVar()
-            if nextVar is None:
-                continue
-            domainWhipeOutOccured = False
-            if self._fc_check_failed(vars, nextVar, domains):
-                domainWhipeOutOccured = True
-            if not domainWhipeOutOccured:
-                return self._forward(vars, domains)
+
             domains.getDomain(var).restore()
         vars.stepBack()
         return False
+
+    def _reduceDomains(self, var, val, siblings):
+
+
+

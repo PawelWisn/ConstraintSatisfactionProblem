@@ -143,8 +143,8 @@ class Sudoku:
         return len(numbers_in_box) == len(set(numbers_in_box))
 
 
-first = 13
-last = 13
+first = 48
+last = 49
 times = []
 times_s = []
 times_r = []
