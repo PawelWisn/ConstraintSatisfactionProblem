@@ -169,7 +169,7 @@ times_bt_f = []
 times_bt_sdf = []
 times_bt_f_sdf = []
 i_arr = set()
-info = ["Backtrack", "Forward"]#,"Backtrack - SDF","Forward - SDF"]
+info = ["Backtrack", "Forward"]  # ,"Backtrack - SDF","Forward - SDF"]
 for run in range(len(info)):
     # if run<=1:
     #     continue
@@ -178,7 +178,7 @@ for run in range(len(info)):
         i_arr.add(i)
         s = Sudoku(i)
 
-        if run>=2:
+        if run >= 2:
             s.sort_variables()
 
         vars = Variables(s.variables, s.neighbours)
@@ -191,9 +191,9 @@ for run in range(len(info)):
         # s.puzzle.print_state()
 
         start = time()
-        if run == 1 or run==3:
+        if run == 1 or run == 3:
             sol = csp.forward()
-        elif run == 0 or run==2:
+        elif run == 0 or run == 2:
             sol = csp.backtrackSearch()
         end = time()
 
@@ -204,8 +204,7 @@ for run in range(len(info)):
         else:
             print("NO SOLUTION")
 
-        diff = end-start
-        diff**=0.5
+        diff = end - start
         if run == 0:
             times_bt.append(diff)
         if run == 1:
