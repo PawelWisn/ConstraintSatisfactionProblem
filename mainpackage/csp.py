@@ -230,6 +230,6 @@ class CSP:
         return False
 
     def _reduceDomains(self, var, val, siblings):
-
+        pass
 
 

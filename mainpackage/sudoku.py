@@ -99,9 +99,11 @@ class Sudoku:
                             self.get_box(i, j)]:
                             domain.append(x)
                     domains[(i, j)] = domain
+                    variables.append((i, j))
                 else:
                     domains[(i, j)] = [self.puzzle.get_square(i, j)]
-                variables.append((i, j))
+                    variables = [(i, j)] + variables
+
 
         self.variables = variables
         self.domains = domains
@@ -143,8 +145,8 @@ class Sudoku:
         return len(numbers_in_box) == len(set(numbers_in_box))
 
 
-first = 48
-last = 49
+first = 13
+last = 13
 times = []
 times_s = []
 times_r = []
