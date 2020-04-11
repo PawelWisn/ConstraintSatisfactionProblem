@@ -88,11 +88,11 @@ class Domain:
             pass
         else:
             self.active[val_idx] = False
-            if val_idx == self.ptrToCurr:
-                if self.ptrToCurr == self.size - 1:
-                    self.ptrToCurr -= 1
-                else:
-                    self.ptrToCurr += 1
+            # if val_idx == self.ptrToCurr:
+            #     if self.ptrToCurr == self.size - 1:
+            #         self.ptrToCurr -= 1
+            #     else:
+            #         self.ptrToCurr += 1
         # if val in self.vals:
         #     # self.change_history[tag] = (self.vals[:], self.ptrToCurr, self.size)
         #     self.vals.remove(val)
@@ -209,7 +209,6 @@ class CSP:
                 solution = self._try(vars, domains)
                 if solution:
                     return solution
-
         domains.getDomain(var).restore()
         vars.stepBack()
         return False
@@ -221,17 +220,37 @@ class CSP:
         var = vars.getNextVar()
         if var is None:
             return vars.getVarValDict()
-        if domains.getDomain(var).isEmpty():
-            vars.stepBack(False)
-            return False
         for value in domains.getDomain(var):
+            # print('\n',var, value,domains.getDomain(var).vals,domains.getDomain(var).active)
             vars.assignValue(var, value)
-            if not self.constraints.areAcceptable(vars.getVarValDict()):
-                continue
-
-            domains.getDomain(var).restore()
+            if self.constraints.areAcceptable(vars.getVarValDict()):
+                if self._reduceDomains(vars, value, domains):
+                    solution = self._forward(vars, domains)
+                    if solution:
+                        return solution
+                self._restoreDomains(vars, value, domains)
+        domains.getDomain(var).restore()
         vars.stepBack()
         return False
 
-    def _reduceDomains(self, var, val, siblings):
-        pass
+    def _reduceDomains(self, vars, val, domains):
+        var = vars.getCurrVar()
+        # print('rm',var,val,'-',end=' ')
+        for neighbour in vars.getNeighbours(var):
+            if not vars.hasValue(neighbour):
+                domains.getDomain(neighbour).removeVal(val)
+                # print(neighbour,end='')
+                if domains.getDomain(neighbour).isEmpty():
+                    # print('\n',neighbour,'is empty')#
+                    return False
+        # print()
+        return True
+
+    def _restoreDomains(self, vars, val, domains):
+        var = vars.getCurrVar()
+        # print('un', val, '-', end=' ')
+        for neighbour in vars.getNeighbours(var):
+            if not vars.hasValue(neighbour):
+                domains.getDomain(neighbour).undoRemoval(val)
+                # print(neighbour,end='')
+        # print()

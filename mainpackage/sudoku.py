@@ -162,16 +162,16 @@ class Sudoku:
         return len(numbers_in_box) == len(set(numbers_in_box))
 
 
-first = 13
-last = 13
+first =1
+last = 46
 times = []
 times_s = []
 times_r = []
 i_arr = set()
-info = ["Backtrack", "Backtrack - Smallest Domain First"]
+info = ["Backtrack", "Backtrack - Smallest Domain First", "Forward"]
 for run in range(len(info)):
-    # if run==0:
-    #     continue
+    if run<=1:
+        continue
     print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ RUN:", info[run])
     for i in range(first, last + 1, 1):
         i_arr.add(i)
@@ -179,8 +179,8 @@ for run in range(len(info)):
 
         if run == 1:
             s.sort_variables()
-        if run == 2:
-            s.sort_variables(False)
+        # if run == 2:
+        #     s.sort_variables(False)
         vars = Variables(s.variables, s.neighbours)
         domains = Domains(s.domains)
         constraints = Constraints([s.constraint_row, s.constraint_col, s.constraint_box])
@@ -188,11 +188,13 @@ for run in range(len(info)):
 
         print(info[run], '-----------------------------', s.id)
 
-        s.puzzle.print_state()
+        # s.puzzle.print_state()
 
         start = time()
-        # sol = csp.forward()
-        sol = csp.backtrackSearch()
+        if run==2:
+            sol = csp.forward()
+        elif run<=1:
+            sol = csp.backtrackSearch()
         end = time()
 
         if sol:
