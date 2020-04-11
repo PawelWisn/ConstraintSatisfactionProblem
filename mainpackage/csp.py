@@ -2,8 +2,9 @@ from collections import OrderedDict
 
 
 class Variables:
-    def __init__(self, arr, ptr=-1):
-        self.vars = [x for x in arr]
+    def __init__(self, vars, neighbours, ptr=-1):
+        self.vars = [x for x in vars]
+        self.neighbours = neighbours
         self.ptrToCurr = ptr
         self.size = len(self.vars)
         self.values = OrderedDict()
@@ -12,13 +13,16 @@ class Variables:
         if self.ptrToCurr >= 0:
             return self.vars[self.ptrToCurr]
 
+    def getNeighbours(self, var):
+        return self.neighbours[var]
+
     def getNextVar(self):
         if self.ptrToCurr + 1 == self.size:
             return None
         self.ptrToCurr += 1
         return self.vars[self.ptrToCurr]
 
-    def hasValue(self,var):
+    def hasValue(self, var):
         return var in self.values.keys()
 
     def assignValue(self, var, value):
@@ -30,7 +34,7 @@ class Variables:
     def getVarValDict(self):
         return self.values
 
-    def stepBack(self,pop=True):
+    def stepBack(self, pop=True):
         if self.ptrToCurr >= 0:
             self.ptrToCurr -= 1
             if pop:
@@ -231,5 +235,3 @@ class CSP:
 
     def _reduceDomains(self, var, val, siblings):
         pass
-
-

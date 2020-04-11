@@ -104,7 +104,24 @@ class Sudoku:
                     domains[(i, j)] = [self.puzzle.get_square(i, j)]
                     variables = [(i, j)] + variables
 
+        neighbours = dict()
+        for i in range(self.size):
+            for j in range(self.size):
+                key = (i, j)
+                row_n = [(i, col) for col in range(self.size)]
+                col_n = [(row, j) for row in range(self.size)]
+                row_n.remove(key)
+                col_n.remove(key)
+                box_x, box_y = self.get_box(i, j)
+                box_n = []
+                box_size = int(self.size ** 0.5)
+                for box_x_offset in range(box_size):
+                    for box_y_offset in range(box_size):
+                        box_n.append(((box_x * box_size) + box_x_offset, (box_y * box_size) + box_y_offset))
+                box_n.remove(key)
+                neighbours[key] = tuple(set(box_n + row_n + col_n))
 
+        self.neighbours = neighbours
         self.variables = variables
         self.domains = domains
 
@@ -121,7 +138,7 @@ class Sudoku:
         numbers_in_row = []
         for j in range(0, self.size):
             if (row, j) in vars.keys():  # row check
-                numbers_in_row.append(vars[(row,j)])
+                numbers_in_row.append(vars[(row, j)])
         return len(numbers_in_row) == len(set(numbers_in_row))
 
     def constraint_col(self, vars):
@@ -164,7 +181,7 @@ for run in range(len(info)):
             s.sort_variables()
         if run == 2:
             s.sort_variables(False)
-        vars = Variables(s.variables)
+        vars = Variables(s.variables, s.neighbours)
         domains = Domains(s.domains)
         constraints = Constraints([s.constraint_row, s.constraint_col, s.constraint_box])
         csp = CSP(vars, domains, constraints)
