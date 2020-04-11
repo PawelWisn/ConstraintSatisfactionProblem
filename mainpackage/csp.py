@@ -10,8 +10,7 @@ class Variables:
         self.values = OrderedDict()
 
     def getCurrVar(self):
-        if self.ptrToCurr >= 0:
-            return self.vars[self.ptrToCurr]
+        return self.vars[self.ptrToCurr]
 
     def getNeighbours(self, var):
         return self.neighbours[var]
@@ -34,15 +33,10 @@ class Variables:
     def getVarValDict(self):
         return self.values
 
-    def stepBack(self, pop=True):
+    def stepBack(self):
         if self.ptrToCurr >= 0:
             self.ptrToCurr -= 1
-            if pop:
-                self.values.popitem()
-
-    def getActiveVars(self):  # current included
-        if self.ptrToCurr >= 0:
-            return self.vars[0:self.ptrToCurr + 1]
+            self.values.popitem()
 
 
 class Domain:
@@ -52,56 +46,30 @@ class Domain:
         self.active = [True for _ in arr]
         self.ptrToCurr = ptr
         self.size = len(arr)
-        # self.change_history = {}
 
-    # def undoLast(self, tag):
-    #     if tag in self.change_history:
-    #         self.vals, self.ptrToCurr, self.size = self.change_history[tag]
-    #         del self.change_history[tag]  # possibly to delete
     def undoRemoval(self, val):
-        try:
-            val_idx = self.vals.index(val)
-        except ValueError:
-            pass
-        else:
-            self.active[val_idx] = True
+        # try:
+        #     val_idx = self.vals.index(val)
+        # except ValueError:
+        #     pass
+        # else:
+        #     self.active[val_idx] = True
+        if val in self.vals:
+            self.active[self.vals.index(val)] = True
 
     def restore(self):
         self.active = [True for _ in self.vals]
         self.ptrToCurr = -1
-        # self.vals = [x for x in self.valsCopy]
-        # self.size = len(self.vals)
-        # if ptr:
-        #     self.ptrToCurr = -1
-        # self.change_history = {}
-
-    # def removeByIdx(self, idx, tag):
-    #     self.change_history[tag] = (self.vals[:], self.ptrToCurr, self.size)
-    #     self.vals = self.vals[:idx] + self.vals[idx + 1:]
-    #     self.ptrToCurr = min(self.ptrToCurr, len(self.vals) - 1)
-    #     self.size = len(self.vals)
 
     def removeVal(self, val):
-        try:
-            val_idx = self.vals.index(val)
-        except ValueError:
-            pass
-        else:
-            self.active[val_idx] = False
-            # if val_idx == self.ptrToCurr:
-            #     if self.ptrToCurr == self.size - 1:
-            #         self.ptrToCurr -= 1
-            #     else:
-            #         self.ptrToCurr += 1
-        # if val in self.vals:
-        #     # self.change_history[tag] = (self.vals[:], self.ptrToCurr, self.size)
-        #     self.vals.remove(val)
-        #     self.ptrToCurr = min(self.ptrToCurr, len(self.vals) - 1)
-        #     self.size = len(self.vals)
-
-    # def getByIdx(self, idx):
-    #     self.ptrToCurr = idx
-    #     return self.vals[idx]
+        # try:
+        #     val_idx = self.vals.index(val)
+        # except ValueError:
+        #     pass
+        # else:
+        #     self.active[val_idx] = False
+        if val in self.vals:
+            self.active[self.vals.index(val)] = False
 
     def getValue(self):
         if self.ptrToCurr >= 0:
@@ -134,28 +102,6 @@ class Domains:
 
     def getDomain(self, var):
         return self.domains[var]
-
-    # def stepBack(self, var):
-    #     if self.ptrToCurr >= 0:
-    #         self.domains[var].totalReset()
-    #         self.ptrToCurr -= 1
-
-    # def getCurrDom(self):
-    #     if self.ptrToCurr >= 0:
-    #         return self.domains[self.ptrToCurr]
-
-    # def getValues(self):  # current included
-    #     return [value.getValue() for var, value in self.domains.items()]
-
-    # def undoUpcoming(self):
-    #     for i in range(self.ptrToCurr + 1, self.size):
-    #         self.domains[i].undoLast(self.changeTags.pop())
-
-    # def anyUpcomingEmpty(self):
-    #     for i in range(self.ptrToCurr + 1, self.size):
-    #         if self.domains[i].isEmpty():
-    #             return True
-    #     return False
 
 
 class Constraint:
@@ -221,7 +167,6 @@ class CSP:
         if var is None:
             return vars.getVarValDict()
         for value in domains.getDomain(var):
-            # print('\n',var, value,domains.getDomain(var).vals,domains.getDomain(var).active)
             vars.assignValue(var, value)
             if self.constraints.areAcceptable(vars.getVarValDict()):
                 if self._reduceDomains(vars, value, domains):
@@ -235,22 +180,15 @@ class CSP:
 
     def _reduceDomains(self, vars, val, domains):
         var = vars.getCurrVar()
-        # print('rm',var,val,'-',end=' ')
         for neighbour in vars.getNeighbours(var):
             if not vars.hasValue(neighbour):
                 domains.getDomain(neighbour).removeVal(val)
-                # print(neighbour,end='')
                 if domains.getDomain(neighbour).isEmpty():
-                    # print('\n',neighbour,'is empty')#
                     return False
-        # print()
         return True
 
     def _restoreDomains(self, vars, val, domains):
         var = vars.getCurrVar()
-        # print('un', val, '-', end=' ')
         for neighbour in vars.getNeighbours(var):
             if not vars.hasValue(neighbour):
                 domains.getDomain(neighbour).undoRemoval(val)
-                # print(neighbour,end='')
-        # print()

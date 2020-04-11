@@ -162,25 +162,25 @@ class Sudoku:
         return len(numbers_in_box) == len(set(numbers_in_box))
 
 
-first =1
+first = 3
 last = 46
-times = []
-times_s = []
-times_r = []
+times_bt = []
+times_bt_f = []
+times_bt_sdf = []
+times_bt_f_sdf = []
 i_arr = set()
-info = ["Backtrack", "Backtrack - Smallest Domain First", "Forward"]
+info = ["Backtrack", "Forward"]#,"Backtrack - SDF","Forward - SDF"]
 for run in range(len(info)):
-    if run<=1:
-        continue
+    # if run<=1:
+    #     continue
     print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ RUN:", info[run])
-    for i in range(first, last + 1, 1):
+    for i in range(first, last + 1, 3):
         i_arr.add(i)
         s = Sudoku(i)
 
-        if run == 1:
+        if run>=2:
             s.sort_variables()
-        # if run == 2:
-        #     s.sort_variables(False)
+
         vars = Variables(s.variables, s.neighbours)
         domains = Domains(s.domains)
         constraints = Constraints([s.constraint_row, s.constraint_col, s.constraint_box])
@@ -191,9 +191,9 @@ for run in range(len(info)):
         # s.puzzle.print_state()
 
         start = time()
-        if run==2:
+        if run == 1 or run==3:
             sol = csp.forward()
-        elif run<=1:
+        elif run == 0 or run==2:
             sol = csp.backtrackSearch()
         end = time()
 
@@ -204,28 +204,36 @@ for run in range(len(info)):
         else:
             print("NO SOLUTION")
 
+        diff = end-start
+        diff**=0.5
         if run == 0:
-            times.append(end - start)
+            times_bt.append(diff)
         if run == 1:
-            times_s.append(end - start)
+            times_bt_f.append(diff)
         if run == 2:
-            times_r.append(end - start)
+            times_bt_sdf.append(diff)
+        if run == 3:
+            times_bt_f_sdf.append(diff)
 
         print('time: %.10f\n' % (end - start))
 
 if len(info) > 0:
-    if len(times) > 0:
-        plt.bar([x - 0.1 for x in list(i_arr)], times, width=0.2, align='center', color='blue',
+    if len(times_bt) > 0:
+        plt.bar([x - 0.5 for x in sorted(list(i_arr))], times_bt, width=1, align='center', color='green',
                 label=info[0])
     if len(info) > 1:
-        if len(times_s) > 0:
-            plt.bar([x + 0.1 for x in list(i_arr)], times_s, width=0.2, align='center', color='orange',
+        if len(times_bt_f) > 0:
+            plt.bar([x + 0.5 for x in sorted(list(i_arr))], times_bt_f, width=1, align='center', color='red',
                     label=info[1])
     if len(info) > 2:
-        if len(times_r) > 0:
-            plt.bar([x + 0.3 for x in list(i_arr)], times_r, width=0.2, align='center', color='red',
+        if len(times_bt_sdf) > 0:
+            plt.bar([x + 0.3 for x in sorted(list(i_arr))], times_bt_sdf, width=0.2, align='center', color='brown',
                     label=info[2])
-    plt.xticks(list(i_arr))
+    if len(info) > 3:
+        if len(times_bt_f_sdf) > 0:
+            plt.bar([x + 0.5 for x in sorted(list(i_arr))], times_bt_f_sdf, width=0.2, align='center', color='green',
+                    label=info[3])
+    plt.xticks(sorted(list(i_arr)))
     plt.xlabel("Puzzle number")
     plt.ylabel("Time [s]")
     plt.legend()
