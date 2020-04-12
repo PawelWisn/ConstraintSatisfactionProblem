@@ -30,6 +30,10 @@ class Board:
             print(row)
         print()
 
+    def dictToSquare(self, d):
+        for x, y in d.items():
+            s.puzzle.fill_square(x, y)
+
     def __iter__(self):
         self.index = 0
         return self
@@ -162,8 +166,9 @@ class Sudoku:
         return len(numbers_in_box) == len(set(numbers_in_box))
 
 
-first = 3
-last = 46
+first = 12
+last = 14
+skip = 1
 times_bt = []
 times_bt_f = []
 times_bt_sdf = []
@@ -171,10 +176,10 @@ times_bt_f_sdf = []
 i_arr = set()
 info = ["Backtrack", "Forward"]  # ,"Backtrack - SDF","Forward - SDF"]
 for run in range(len(info)):
-    # if run<=1:
+    # if run<1:
     #     continue
     print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ RUN:", info[run])
-    for i in range(first, last + 1, 3):
+    for i in range(first, last + 1, skip):
         i_arr.add(i)
         s = Sudoku(i)
 
@@ -198,8 +203,7 @@ for run in range(len(info)):
         end = time()
 
         if sol:
-            for x, y in sol.items():
-                s.puzzle.fill_square(x, y)
+            s.puzzle.dictToSquare(sol)
             s.puzzle.print_state()
         else:
             print("NO SOLUTION")
@@ -216,13 +220,14 @@ for run in range(len(info)):
 
         print('time: %.10f\n' % (end - start))
 
+width = 0.2
 if len(info) > 0:
     if len(times_bt) > 0:
-        plt.bar([x - 0.5 for x in sorted(list(i_arr))], times_bt, width=1, align='center', color='green',
+        plt.bar([x - width / 2 for x in sorted(list(i_arr))], times_bt, width=width, align='center', color='green',
                 label=info[0])
     if len(info) > 1:
         if len(times_bt_f) > 0:
-            plt.bar([x + 0.5 for x in sorted(list(i_arr))], times_bt_f, width=1, align='center', color='red',
+            plt.bar([x + width / 2 for x in sorted(list(i_arr))], times_bt_f, width=width, align='center', color='red',
                     label=info[1])
     if len(info) > 2:
         if len(times_bt_sdf) > 0:

@@ -48,12 +48,6 @@ class Domain:
         self.size = len(arr)
 
     def undoRemoval(self, val):
-        # try:
-        #     val_idx = self.vals.index(val)
-        # except ValueError:
-        #     pass
-        # else:
-        #     self.active[val_idx] = True
         if val in self.vals:
             self.active[self.vals.index(val)] = True
 
@@ -62,12 +56,6 @@ class Domain:
         self.ptrToCurr = -1
 
     def removeVal(self, val):
-        # try:
-        #     val_idx = self.vals.index(val)
-        # except ValueError:
-        #     pass
-        # else:
-        #     self.active[val_idx] = False
         if val in self.vals:
             self.active[self.vals.index(val)] = False
 
