@@ -82,14 +82,14 @@ class Sudoku:
             column_numbers.append(numbers)
 
         box_numbers = {}
-        box_width = self.size//self.horBoxes
-        box_height = self.size//self.verBoxes
+        box_width = self.size // self.horBoxes
+        box_height = self.size // self.verBoxes
         for i in range(self.verBoxes):
             for j in range(self.horBoxes):
                 numbers = []
                 for boxrow in range(box_height):
                     x, y, y2 = i * box_height + boxrow, j * box_width, (j + 1) * box_width
-                    subrow_numbers = self.puzzle.get_subrow(x,y,y2)
+                    subrow_numbers = self.puzzle.get_subrow(x, y, y2)
                     for number in subrow_numbers:
                         if number != '.':
                             numbers.append(number)
@@ -127,7 +127,7 @@ class Sudoku:
                 for box_x_offset in range(box_height):
                     for box_y_offset in range(box_width):
                         x, y = (box_x * box_height) + box_x_offset, (box_y * box_width) + box_y_offset
-                        box_n.append((x,y))
+                        box_n.append((x, y))
                 # print((i,j),box_n)
                 box_n.remove(key)
                 neighbours[key] = tuple(sorted(set(box_n + row_n + col_n)))
@@ -167,7 +167,7 @@ class Sudoku:
         box_x, box_y = self.get_box(row, col)
         numbers_in_box = []
         for box_row_offset in range(box_height):
-            x = box_x * box_height + box_row_offset#
+            x = box_x * box_height + box_row_offset  #
             for boxcol in range(box_y * box_width, (box_y + 1) * box_width):
                 if (x, boxcol) in vars.keys():
                     numbers_in_box.append(vars[(x, boxcol)])
@@ -184,9 +184,9 @@ times_bt_f_sdf = []
 i_arr = set()
 info = ["Backtrack", "Forward"]  # ,"Backtrack - SDF","Forward - SDF"]
 for run in range(len(info)):
-    if run<1:
-        continue
-    print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ RUN:", info[run])
+    # if run < 1:
+    #     continue
+    print("+"*90, "RUN:", info[run])
     for i in range(first, last + 1, skip):
         i_arr.add(i)
         s = Sudoku(i)
@@ -197,9 +197,9 @@ for run in range(len(info)):
         vars = Variables(s.variables, s.neighbours)
         domains = Domains(s.domains)
         constraints = Constraints([s.constraint_row, s.constraint_col, s.constraint_box])
-        csp = CSP(vars, domains, constraints,s)
+        csp = CSP(vars, domains, constraints)
 
-        print(info[run], '-----------------------------', s.id)
+        print('-'*40, info[run], s.id)
 
         # s.puzzle.print_state()
 

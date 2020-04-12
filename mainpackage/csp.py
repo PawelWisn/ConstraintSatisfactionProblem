@@ -123,21 +123,15 @@ class Constraints:
 
 
 class CSP:
-    def __init__(self, variables, domains, constraints,s):
+    def __init__(self, variables, domains, constraints):
         self.variables = variables
         self.domains = domains
         self.constraints = constraints
-        self.counter = -1
-        self.s = s
 
     def backtrackSearch(self):
         return self._try(self.variables, self.domains)
 
     def _try(self, vars, domains):
-        # self.counter+=1
-        # if self.counter%10000==0:
-        #     self.s.puzzle.dictToSquare(vars.getVarValDict())
-        #     self.s.puzzle.print_state()
         var = vars.getNextVar()
         if var is None:
             return vars.getVarValDict()
@@ -155,10 +149,6 @@ class CSP:
         return self._forward(self.variables, self.domains)
 
     def _forward(self, vars, domains):
-        # self.counter += 1
-        # if self.counter % 10000 == 0:
-        #     self.s.puzzle.dictToSquare(vars.getVarValDict())
-        #     self.s.puzzle.print_state()
         var = vars.getNextVar()
         if var is None:
             return vars.getVarValDict()
