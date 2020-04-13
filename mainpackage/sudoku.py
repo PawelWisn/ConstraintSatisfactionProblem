@@ -174,7 +174,7 @@ class Sudoku:
         return len(numbers_in_box) == len(set(numbers_in_box))
 
 
-first = 56
+first = 1
 last = 58
 skip = 1
 times_bt = []
@@ -250,3 +250,16 @@ if len(info) > 0:
     plt.ylabel("Time [s]")
     plt.legend()
     plt.show()
+
+
+
+def speedup(one, two):
+    return str(round(round(one/two,4)*100,4))+'%'
+
+stats = []
+speedups = []
+for one,two in zip(times_bt,times_bt_f):
+    speedups.append(float(speedup(one,two)[:-1]))
+    stats.append((one,two,speedup(one,two)))
+    print((one,two,speedup(one,two)))
+print('avg speedup:', sum(speedups)/len(speedups))
