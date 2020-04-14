@@ -135,19 +135,88 @@ class Crossword:
                         return False
         return True
 
-for i in range(1,3+1):
-    print('-' * 30, i)
-    c = Crossword(i)
-    c.board.print_state()
 
-    vars = Variables(c.variables, c.neighbours)
-    domains = Domains(c.domains)
-    constraints = Constraints([c.constraints])
-    csp = CSP(vars, domains, constraints)
-    start = time()
-    sol = csp.backtrackSearch()
-    end = time()
-    print((end-start),'\n',sol)
-    c.board.dictToSquare(sol)
-    c.board.print_state()
+first = 1
+last = 4
+skip = 1
+times_bt = []
+times_bt_f = []
+times_bt_sdf = []
+times_bt_f_sdf = []
+i_arr = set()
+info = ["Backtrack", "Forward"]  # ,"Backtrack - SDF","Forward - SDF"]
+for run in range(len(info)):
+    # if run < 1:
+    #     continue
+    print("+"*90, "RUN:", info[run])
+    for i in range(first, last + 1, skip):
+        i_arr.add(i)
+        c = Crossword(i)
 
+        vars = Variables(c.variables, c.neighbours)
+        domains = Domains(c.domains)
+        constraints = Constraints([c.constraints])
+        csp = CSP(vars, domains, constraints)
+
+        print('-'*40, info[run], i)
+
+        start = time()
+        if run == 1 or run == 3:
+            sol = csp.forward()
+        elif run == 0 or run == 2:
+            sol = csp.backtrackSearch()
+        end = time()
+
+        if sol:
+            c.board.dictToSquare(sol)
+            c.board.print_state()
+        else:
+            print("NO SOLUTION")
+
+        diff = end - start
+        if run == 0:
+            times_bt.append(diff)
+        if run == 1:
+            times_bt_f.append(diff)
+        if run == 2:
+            times_bt_sdf.append(diff)
+        if run == 3:
+            times_bt_f_sdf.append(diff)
+
+        print('time: %.10f\n' % (end - start))
+
+width = 0.2
+if len(info) > 0:
+    if len(times_bt) > 0:
+        plt.bar([x - width / 2 for x in sorted(list(i_arr))], times_bt, width=width, align='center', color='green',
+                label=info[0])
+    if len(info) > 1:
+        if len(times_bt_f) > 0:
+            plt.bar([x + width / 2 for x in sorted(list(i_arr))], times_bt_f, width=width, align='center', color='red',
+                    label=info[1])
+    if len(info) > 2:
+        if len(times_bt_sdf) > 0:
+            plt.bar([x + 0.3 for x in sorted(list(i_arr))], times_bt_sdf, width=0.2, align='center', color='brown',
+                    label=info[2])
+    if len(info) > 3:
+        if len(times_bt_f_sdf) > 0:
+            plt.bar([x + 0.5 for x in sorted(list(i_arr))], times_bt_f_sdf, width=0.2, align='center', color='green',
+                    label=info[3])
+    plt.xticks(sorted(list(i_arr)))
+    plt.xlabel("Puzzle number")
+    plt.ylabel("Time [s]")
+    plt.legend()
+    plt.show()
+
+
+
+def speedup(one, two):
+    return str(round(round(one/two,4)*100,4))+'%'
+
+stats = []
+speedups = []
+for one,two in zip(times_bt,times_bt_f):
+    speedups.append(float(speedup(one,two)[:-1]))
+    stats.append((one,two,speedup(one,two)))
+    print((one,two,speedup(one,two)))
+print('avg speedup:', sum(speedups)/len(speedups))
