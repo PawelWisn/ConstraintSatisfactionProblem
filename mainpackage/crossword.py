@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from collections import OrderedDict
 from copy import deepcopy
 
+
 class Board:
     def __init__(self, matrix):
         self.state = matrix
@@ -66,7 +67,6 @@ class Crossword:
                 elif prev == '_' and self.board.get_square(i, j) == '_':
                     horVars[(var_x, var_y)].append((i, j))
                 prev = self.board.get_square(i, j)
-        print(horVars.items())
 
         verVars = {}
         for j in range(self.board.width):
@@ -81,7 +81,6 @@ class Crossword:
                 elif prev == '_' and self.board.get_square(i, j) == '_':
                     verVars[(var_x, var_y)].append((i, j))
                 prev = self.board.get_square(i, j)
-        print(verVars.items())
 
         vars = list([items for key, items in verVars.items()])
         vars.extend([items for key, items in horVars.items()])
@@ -107,37 +106,40 @@ class Crossword:
                     n.append(candidate)
             self.neighbours[var] = n
 
+    def reset_fill(self, vars):
+        self.board.dictToSquare(vars)
+        self.board.print_state()
     # def sort_variables(self, low_to_high=True):
     #     self.domains = OrderedDict(sorted(self.domains.items(), key=lambda x: len(x[1]), reverse=not low_to_high))
     #     self.variables = [var for var, dom in self.domains.items()]
-    def isHor(self,var):
-        return var[0][0]==var[1][0]
+    def isHor(self, var):
+        return var[0][0] == var[1][0]
 
     def constraints(self, vars):
         newVar, newVal = list(vars.items())[-1]  # new variable
         isHor = self.isHor(newVar)
-        # self.board.dictToSquare(vars)
-        # self.board.print_state()
         if newVal in [val for var, val in list(vars.items())[:-1]]:
             return False
         for prevVar, value in list(vars.items())[:-1]:
-            # if isHor and self.isHor(prevVar) and newVar[0][0]!=prevVar[0][0]:
-            #     continue
-            # elif not isHor and not self.isHor(prevVar) and newVar[0][1]!=prevVar[0][1]:
-            #     continue
-            # if (prevVar[0] < newVar[0] and prevVar[1] < newVar[1]) \
-            #         or (prevVar[0] > newVar[0] and prevVar[1] > newVar[1]):
-            #     continue
+            if isHor and self.isHor(prevVar) and newVar[0][0] != prevVar[0][0]:
+                continue
+            if not isHor and not self.isHor(prevVar) and newVar[0][1] != prevVar[0][1]:
+                continue
+            if (prevVar[0][0] < newVar[0][0] and prevVar[0][1] < newVar[0][1]) \
+                    or (prevVar[0][0] > newVar[0][0] and prevVar[0][1] > newVar[0][1]):
+                continue
             for idx, spot in enumerate(newVar):
                 if spot in prevVar:
                     prevIdx = prevVar.index(spot)
                     if newVal[idx] != value[prevIdx]:
                         return False
+        # self.board.dictToSquare(vars)
+        # self.board.print_state()
         return True
 
 
-first = 1
-last = 4
+first = 0
+last = 3
 skip = 1
 times_bt = []
 times_bt_f = []
@@ -146,9 +148,9 @@ times_bt_f_sdf = []
 i_arr = set()
 info = ["Backtrack", "Forward"]  # ,"Backtrack - SDF","Forward - SDF"]
 for run in range(len(info)):
-    # if run < 1:
-    #     continue
-    print("+"*90, "RUN:", info[run])
+    if run < 1:
+        continue
+    print("+" * 90, "RUN:", info[run])
     for i in range(first, last + 1, skip):
         i_arr.add(i)
         c = Crossword(i)
@@ -156,9 +158,9 @@ for run in range(len(info)):
         vars = Variables(c.variables, c.neighbours)
         domains = Domains(c.domains)
         constraints = Constraints([c.constraints])
-        csp = CSP(vars, domains, constraints)
+        csp = CSP(vars, domains, constraints,c)
 
-        print('-'*40, info[run], i)
+        print('-' * 40, info[run], i)
 
         start = time()
         if run == 1 or run == 3:
@@ -209,14 +211,14 @@ if len(info) > 0:
     plt.show()
 
 
-
 def speedup(one, two):
-    return str(round(round(one/two,4)*100,4))+'%'
+    return str(round(round(one / two, 4) * 100, 4)) + '%'
+
 
 stats = []
 speedups = []
-for one,two in zip(times_bt,times_bt_f):
-    speedups.append(float(speedup(one,two)[:-1]))
-    stats.append((one,two,speedup(one,two)))
-    print((one,two,speedup(one,two)))
-print('avg speedup:', sum(speedups)/len(speedups))
+for one, two in zip(times_bt, times_bt_f):
+    speedups.append(float(speedup(one, two)[:-1]))
+    stats.append((one, two, speedup(one, two)))
+    print((one, two, speedup(one, two)))
+print('avg speedup:', sum(speedups) / len(speedups))
