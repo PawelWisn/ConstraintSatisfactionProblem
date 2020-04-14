@@ -48,7 +48,6 @@ class Board:
 
 class Sudoku:
     def __init__(self, id, filename='src/Sudoku.csv'):
-        super().__init__()
         with open(filename, 'r') as f:
             f.readline()
             for i in range(1, id):
