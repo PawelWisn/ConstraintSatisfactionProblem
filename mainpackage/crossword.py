@@ -2,11 +2,12 @@ from mainpackage.csp import CSP, Variables, Constraints, Domains
 from time import time
 import matplotlib.pyplot as plt
 from collections import OrderedDict
-
+from copy import deepcopy
 
 class Board:
     def __init__(self, matrix):
         self.state = matrix
+        self.cp = matrix
         self.width = len(matrix[0])
         self.height = len(matrix)
 
@@ -25,8 +26,10 @@ class Board:
         print()
 
     def dictToSquare(self, d):
-        for x, y in d.items():
-            self.fill_square(x, y)
+        self.state = deepcopy(self.cp)
+        for key, val in d.items():
+            for idx, spot in enumerate(key):
+                self.fill_square(spot, val[idx])
 
     def __iter__(self):
         return self
@@ -42,7 +45,7 @@ class Crossword:
         board = f'src/Jolka/puzzle{id}'
         words = f'src/Jolka/words{id}'
         with open(board, 'r') as f:
-            self.board = Board([line.strip() for line in f.readlines()])
+            self.board = Board([list(line.strip()) for line in f.readlines()])
         with open(words, 'r') as f:
             self.words = sorted([line.strip() for line in f.readlines()])
 
@@ -103,45 +106,48 @@ class Crossword:
                 if len(var) == len(candidate) and var is not candidate:
                     n.append(candidate)
             self.neighbours[var] = n
-        pass
 
     # def sort_variables(self, low_to_high=True):
     #     self.domains = OrderedDict(sorted(self.domains.items(), key=lambda x: len(x[1]), reverse=not low_to_high))
     #     self.variables = [var for var, dom in self.domains.items()]
-    #
-    # def get_box(self, i, j):
-    #     out = i // (self.size // self.verBoxes), j // (self.size // self.horBoxes)
-    #     return out
-    #
-    # def constraint_row(self, vars):
-    #     row, col = list(vars.items())[-1][0]  # new variable
-    #     numbers_in_row = []
-    #     for j in range(0, self.size):
-    #         if (row, j) in vars.keys():  # row check
-    #             numbers_in_row.append(vars[(row, j)])
-    #     return len(numbers_in_row) == len(set(numbers_in_row))
-    #
-    # def constraint_col(self, vars):
-    #     row, col = list(vars.items())[-1][0]  # new variable
-    #     numbers_in_col = []
-    #     for i in range(0, self.size):
-    #         if (i, col) in vars.keys():  # column check
-    #             numbers_in_col.append(vars[(i, col)])
-    #     return len(numbers_in_col) == len(set(numbers_in_col))
-    #
-    # def constraint_box(self, vars):
-    #     row, col = list(vars.items())[-1][0]  # new variable
-    #     box_width = self.size // self.horBoxes
-    #     box_height = self.size // self.verBoxes
-    #     box_x, box_y = self.get_box(row, col)
-    #     numbers_in_box = []
-    #     for box_row_offset in range(box_height):
-    #         x = box_x * box_height + box_row_offset  #
-    #         for boxcol in range(box_y * box_width, (box_y + 1) * box_width):
-    #             if (x, boxcol) in vars.keys():
-    #                 numbers_in_box.append(vars[(x, boxcol)])
-    #     return len(numbers_in_box) == len(set(numbers_in_box))
+    def isHor(self,var):
+        return var[0][0]==var[1][0]
 
+    def constraints(self, vars):
+        newVar, newVal = list(vars.items())[-1]  # new variable
+        isHor = self.isHor(newVar)
+        # self.board.dictToSquare(vars)
+        # self.board.print_state()
+        if newVal in [val for var, val in list(vars.items())[:-1]]:
+            return False
+        for prevVar, value in list(vars.items())[:-1]:
+            # if isHor and self.isHor(prevVar) and newVar[0][0]!=prevVar[0][0]:
+            #     continue
+            # elif not isHor and not self.isHor(prevVar) and newVar[0][1]!=prevVar[0][1]:
+            #     continue
+            # if (prevVar[0] < newVar[0] and prevVar[1] < newVar[1]) \
+            #         or (prevVar[0] > newVar[0] and prevVar[1] > newVar[1]):
+            #     continue
+            for idx, spot in enumerate(newVar):
+                if spot in prevVar:
+                    prevIdx = prevVar.index(spot)
+                    if newVal[idx] != value[prevIdx]:
+                        return False
+        return True
 
-c = Crossword(1)
-c.board.print_state()
+for i in range(1,3+1):
+    print('-' * 30, i)
+    c = Crossword(i)
+    c.board.print_state()
+
+    vars = Variables(c.variables, c.neighbours)
+    domains = Domains(c.domains)
+    constraints = Constraints([c.constraints])
+    csp = CSP(vars, domains, constraints)
+    start = time()
+    sol = csp.backtrackSearch()
+    end = time()
+    print((end-start),'\n',sol)
+    c.board.dictToSquare(sol)
+    c.board.print_state()
+
