@@ -92,35 +92,19 @@ class Crossword:
 
         self.domains = {}
         self.variables = []
-        for var in vars:
+        for var in sorted(vars, key=lambda x: len(x)):
             self.variables.append(tuple(var))
             self.domains[tuple(var)] = words[len(var)]
 
+        self.neighbours = {}
+        for var in self.variables:
+            n = []
+            for candidate in self.variables:
+                if len(var) == len(candidate) and var is not candidate:
+                    n.append(candidate)
+            self.neighbours[var] = n
+        pass
 
-    #     neighbours = dict()
-    #     for i in range(self.size):
-    #         for j in range(self.size):
-    #             key = (i, j)
-    #             row_n = [(i, col) for col in range(self.size)]
-    #             col_n = [(row, j) for row in range(self.size)]
-    #             row_n.remove(key)
-    #             col_n.remove(key)
-    #             box_x, box_y = self.get_box(i, j)
-    #             box_n = []
-    #             box_width = self.size // self.horBoxes
-    #             box_height = self.size // self.verBoxes
-    #             for box_x_offset in range(box_height):
-    #                 for box_y_offset in range(box_width):
-    #                     x, y = (box_x * box_height) + box_x_offset, (box_y * box_width) + box_y_offset
-    #                     box_n.append((x, y))
-    #             # print((i,j),box_n)
-    #             box_n.remove(key)
-    #             neighbours[key] = tuple(sorted(set(box_n + row_n + col_n)))
-    #
-    #     self.neighbours = neighbours
-    #     self.variables = variables
-    #     self.domains = domains
-    #
     # def sort_variables(self, low_to_high=True):
     #     self.domains = OrderedDict(sorted(self.domains.items(), key=lambda x: len(x[1]), reverse=not low_to_high))
     #     self.variables = [var for var, dom in self.domains.items()]
