@@ -151,9 +151,9 @@ class CSP:
         return self._forward(self.variables, self.domains)
 
     def _forward(self, vars, domains):
-        self.counter+=1
-        if self.counter%20000==0:
-            self.b.reset_fill(vars.getVarValDict())
+        # self.counter+=1
+        # if self.counter%20000==0:
+        #     self.b.reset_fill(vars.getVarValDict())
         var = vars.getNextVar()
         if var is None:
             return vars.getVarValDict()

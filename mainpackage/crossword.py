@@ -138,8 +138,8 @@ class Crossword:
         return True
 
 
-first = 0
-last = 3
+first = 28
+last = 28
 skip = 1
 times_bt = []
 times_bt_f = []
