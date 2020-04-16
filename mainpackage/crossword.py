@@ -94,7 +94,7 @@ class Crossword:
 
         self.domains = {}
         self.variables = []
-        for var in sorted(vars, key=lambda x: len(x)):
+        for var in sorted(vars, key=lambda x: len(words[len(x)])):
             self.variables.append(tuple(var))
             self.domains[tuple(var)] = words[len(var)]
 
@@ -138,8 +138,8 @@ class Crossword:
         return True
 
 
-first = 28
-last = 28
+first = 0
+last = 15
 skip = 1
 times_bt = []
 times_bt_f = []
