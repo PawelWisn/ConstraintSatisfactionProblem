@@ -106,12 +106,27 @@ class Crossword:
                     n.append(candidate)
             self.neighbours[var] = n
 
+        self.varsAssignedToSquare = {}
+        for i in range(len(self.board.state)):
+            for j in range((len(self.board.state[0]))):
+                if self.board.get_square(i,j)=='#':
+                    continue
+                temp = []
+                for var in self.variables:
+                    if (i,j) in var:
+                        temp.append(var)
+                        if len(temp)==2:
+                            break
+                self.varsAssignedToSquare[(i,j)] = temp
+
     def reset_fill(self, vars):
         self.board.dictToSquare(vars)
         self.board.print_state()
+
     # def sort_variables(self, low_to_high=True):
     #     self.domains = OrderedDict(sorted(self.domains.items(), key=lambda x: len(x[1]), reverse=not low_to_high))
     #     self.variables = [var for var, dom in self.domains.items()]
+
     def isHor(self, var):
         return var[0][0] == var[1][0]
 
