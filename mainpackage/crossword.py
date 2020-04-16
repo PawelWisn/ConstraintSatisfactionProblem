@@ -3,6 +3,7 @@ from time import time
 import matplotlib.pyplot as plt
 from collections import OrderedDict
 from copy import deepcopy
+from math import log2
 
 
 class Board:
@@ -109,15 +110,15 @@ class Crossword:
         self.varsAssignedToSquare = {}
         for i in range(len(self.board.state)):
             for j in range((len(self.board.state[0]))):
-                if self.board.get_square(i,j)=='#':
+                if self.board.get_square(i, j) == '#':
                     continue
                 temp = []
                 for var in self.variables:
-                    if (i,j) in var:
-                        temp.append(var)
-                        if len(temp)==2:
+                    if (i, j) in var:
+                        temp.append((var, var.index((i,j))))
+                        if len(temp) == 2:
                             break
-                self.varsAssignedToSquare[(i,j)] = temp
+                self.varsAssignedToSquare[(i, j)] = temp
 
     def reset_fill(self, vars):
         self.board.dictToSquare(vars)
@@ -133,18 +134,16 @@ class Crossword:
         if newVal in [val for var, val in varList[:-1]]:
             return False
         for square in newVar:
-            if len(self.varsAssignedToSquare[square])==2:
-                var1, var2 = self.varsAssignedToSquare[square]
+            if len(self.varsAssignedToSquare[square]) == 2:
+                (var1, idx1), (var2, idx2) = self.varsAssignedToSquare[square]
                 if var1 in vars.keys():
                     if var2 in vars.keys():
-                        idx1 = var1.index(square)
-                        idx2 = var2.index(square)
                         if vars[var1][idx1] != vars[var2][idx2]:
                             return False
         return True
 
 
-first = 4
+first = 0
 last = 28
 skip = 1
 times_bt = []
@@ -158,13 +157,15 @@ for run in range(len(info)):
     #     continue
     print("+" * 90, "RUN:", info[run])
     for i in range(first, last + 1, skip):
+        if i == 3 or i == 18 or i == 4:
+            continue
         i_arr.add(i)
         c = Crossword(i)
 
         vars = Variables(c.variables, c.neighbours)
         domains = Domains(c.domains)
         constraints = Constraints([c.constraints])
-        csp = CSP(vars, domains, constraints,c)
+        csp = CSP(vars, domains, constraints, c)
 
         print('-' * 40, info[run], i)
 
@@ -218,13 +219,13 @@ if len(info) > 0:
 
 
 def speedup(one, two):
-    return str(round(round(one / two, 4) * 100, 4)) + '%'
+    return str(round(round(one / two, 4) * 100 - 100, 4)) + '%'
 
 
 stats = []
 speedups = []
 for one, two in zip(times_bt, times_bt_f):
     speedups.append(float(speedup(one, two)[:-1]))
-    stats.append((one, two, speedup(one, two)))
-    print((one, two, speedup(one, two)))
-print('avg speedup:', sum(speedups) / len(speedups))
+    stats.append((round(one,3), round(two,3), speedup(one, two)))
+    print(stats[-1])
+print('avg speedup:', str(round(sum(speedups) / len(speedups), 2)) + '%')
