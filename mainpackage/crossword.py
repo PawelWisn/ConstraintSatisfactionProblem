@@ -127,34 +127,25 @@ class Crossword:
     #     self.domains = OrderedDict(sorted(self.domains.items(), key=lambda x: len(x[1]), reverse=not low_to_high))
     #     self.variables = [var for var, dom in self.domains.items()]
 
-    def isHor(self, var):
-        return var[0][0] == var[1][0]
-
     def constraints(self, vars):
-        newVar, newVal = list(vars.items())[-1]  # new variable
-        isHor = self.isHor(newVar)
-        if newVal in [val for var, val in list(vars.items())[:-1]]:
+        varList = list(vars.items())
+        newVar, newVal = varList[-1]  # new variable
+        if newVal in [val for var, val in varList[:-1]]:
             return False
-        for prevVar, value in list(vars.items())[:-1]:
-            if isHor and self.isHor(prevVar) and newVar[0][0] != prevVar[0][0]:
-                continue
-            if not isHor and not self.isHor(prevVar) and newVar[0][1] != prevVar[0][1]:
-                continue
-            if (prevVar[0][0] < newVar[0][0] and prevVar[0][1] < newVar[0][1]) \
-                    or (prevVar[0][0] > newVar[0][0] and prevVar[0][1] > newVar[0][1]):
-                continue
-            for idx, spot in enumerate(newVar):
-                if spot in prevVar:
-                    prevIdx = prevVar.index(spot)
-                    if newVal[idx] != value[prevIdx]:
-                        return False
-        # self.board.dictToSquare(vars)
-        # self.board.print_state()
+        for square in newVar:
+            if len(self.varsAssignedToSquare[square])==2:
+                var1, var2 = self.varsAssignedToSquare[square]
+                if var1 in vars.keys():
+                    if var2 in vars.keys():
+                        idx1 = var1.index(square)
+                        idx2 = var2.index(square)
+                        if vars[var1][idx1] != vars[var2][idx2]:
+                            return False
         return True
 
 
-first = 0
-last = 15
+first = 4
+last = 28
 skip = 1
 times_bt = []
 times_bt_f = []
@@ -163,8 +154,8 @@ times_bt_f_sdf = []
 i_arr = set()
 info = ["Backtrack", "Forward"]  # ,"Backtrack - SDF","Forward - SDF"]
 for run in range(len(info)):
-    if run < 1:
-        continue
+    # if run < 1:
+    #     continue
     print("+" * 90, "RUN:", info[run])
     for i in range(first, last + 1, skip):
         i_arr.add(i)
