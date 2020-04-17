@@ -1,5 +1,6 @@
 from collections import OrderedDict
 
+
 class Variables:
     def __init__(self, vars, neighbours, ptr=-1):
         self.vars = [x for x in vars]
@@ -8,6 +9,7 @@ class Variables:
         self.size = len(self.vars)
         self.values = OrderedDict()
         self.taken = [False for _ in self.vars]
+        self.history = []
 
     def getCurrVar(self):
         return self.vars[self.ptrToCurr]
@@ -15,11 +17,24 @@ class Variables:
     def getNeighbours(self, var):
         return self.neighbours[var]
 
-    def getNextVar(self):
-        if self.ptrToCurr + 1 == self.size:
-            return None
-        self.ptrToCurr += 1
-        return self.vars[self.ptrToCurr]
+    def getNextVar(self, domains=None):  # if domains provided, the next var will be the one with the shortest domain
+        self.history.append(self.ptrToCurr)
+        if domains:
+            free = []
+            for i in range(self.size):
+                if self.taken[i] == False:
+                    free.append((self.vars[i], domains.getDomain(self.vars[i])))
+            if len(free) == 0:
+                return None
+            nextVar = sorted(free, key=lambda x: len(x[1]))[0][0]
+            self.ptrToCurr = self.vars.index(nextVar)
+            self.taken[self.ptrToCurr] = True
+            return nextVar
+        else:
+            if self.ptrToCurr + 1 == self.size:
+                return None
+            self.ptrToCurr += 1
+            return self.vars[self.ptrToCurr]
 
     def hasValue(self, var):
         return var in self.values.keys()
@@ -34,9 +49,9 @@ class Variables:
         return self.values
 
     def stepBack(self):
-        if self.ptrToCurr >= 0:
-            self.ptrToCurr -= 1
-            self.values.popitem()
+        self.taken[self.ptrToCurr] = False
+        self.ptrToCurr = self.history.pop()
+        self.values.popitem()  # ?
 
 
 class Domain:
@@ -46,6 +61,9 @@ class Domain:
         self.active = [True for _ in arr]
         self.ptrToCurr = ptr
         self.size = len(arr)
+
+    def __len__(self):
+        return sum(self.active)
 
     def undoRemoval(self, val):
         if val in self.vals:
@@ -124,18 +142,17 @@ class Constraints:
 
 
 class CSP:
-    def __init__(self, variables, domains, constraints, b):
+    def __init__(self, variables, domains, constraints, sdf):
         self.variables = variables
         self.domains = domains
         self.constraints = constraints
-        self.b=b
-        self.counter=0
+        self.sdf = sdf# shortest domain first
 
     def backtrackSearch(self):
         return self._try(self.variables, self.domains)
 
     def _try(self, vars, domains):
-        var = vars.getNextVar()
+        var = vars.getNextVar(domains if self.sdf else None)
         if var is None:
             return vars.getVarValDict()
         for value in domains.getDomain(var):
@@ -152,10 +169,7 @@ class CSP:
         return self._forward(self.variables, self.domains)
 
     def _forward(self, vars, domains):
-        self.counter+=1
-        if self.counter%50000==0:
-            self.b.reset_fill(vars.getVarValDict())
-        var = vars.getNextVar()
+        var = vars.getNextVar(domains if self.sdf else None)
         if var is None:
             return vars.getVarValDict()
         for value in domains.getDomain(var):

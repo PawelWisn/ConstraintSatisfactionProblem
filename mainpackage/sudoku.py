@@ -173,40 +173,38 @@ class Sudoku:
         return len(numbers_in_box) == len(set(numbers_in_box))
 
 
-first = 1
-last = 58
+first = 13
+last = 13
 skip = 1
 times_bt = []
 times_bt_f = []
 times_bt_sdf = []
 times_bt_f_sdf = []
 i_arr = set()
-info = ["Backtrack", "Forward"]  # ,"Backtrack - SDF","Forward - SDF"]
+info = ["Backtrack", "Backtrack - SDF", "Forward" ,"Forward - SDF"]
 for run in range(len(info)):
-    # if run < 1:
-    #     continue
+
     print("+"*90, "RUN:", info[run])
     for i in range(first, last + 1, skip):
         i_arr.add(i)
         s = Sudoku(i)
-        # s.puzzle.print_state()
-        if run >= 2:
-            s.sort_variables()
+
+        sdf = run%2
 
         vars = Variables(s.variables, s.neighbours)
         domains = Domains(s.domains)
         constraints = Constraints([s.constraint_row, s.constraint_col, s.constraint_box])
-        csp = CSP(vars, domains, constraints)
+        csp = CSP(vars, domains, constraints,sdf)
 
         print('-'*40, info[run], s.id)
 
         # s.puzzle.print_state()
 
         start = time()
-        if run == 1 or run == 3:
-            sol = csp.forward()
-        elif run == 0 or run == 2:
+        if run <=1:
             sol = csp.backtrackSearch()
+        else:
+            sol = csp.forward()
         end = time()
 
         if sol:
@@ -218,9 +216,9 @@ for run in range(len(info)):
         diff = end - start
         if run == 0:
             times_bt.append(diff)
-        if run == 1:
-            times_bt_f.append(diff)
         if run == 2:
+            times_bt_f.append(diff)
+        if run == 1:
             times_bt_sdf.append(diff)
         if run == 3:
             times_bt_f_sdf.append(diff)
@@ -230,35 +228,33 @@ for run in range(len(info)):
 width = 0.2
 if len(info) > 0:
     if len(times_bt) > 0:
-        plt.bar([x - width / 2 for x in sorted(list(i_arr))], times_bt, width=width, align='center', color='green',
+        plt.bar([x - 1.5*width for x in sorted(list(i_arr))], times_bt, width=width, align='center', color='#00bb00',
                 label=info[0])
     if len(info) > 1:
-        if len(times_bt_f) > 0:
-            plt.bar([x + width / 2 for x in sorted(list(i_arr))], times_bt_f, width=width, align='center', color='red',
+        if len(times_bt_sdf) > 0:
+            plt.bar([x - width / 2 for x in sorted(list(i_arr))], times_bt_sdf, width=width, align='center', color='green',
                     label=info[1])
     if len(info) > 2:
-        if len(times_bt_sdf) > 0:
-            plt.bar([x + 0.3 for x in sorted(list(i_arr))], times_bt_sdf, width=0.2, align='center', color='brown',
+        if len(times_bt_f) > 0:
+            plt.bar([x + width / 2 for x in sorted(list(i_arr))], times_bt_f, width=width, align='center', color='#ff0000',
                     label=info[2])
     if len(info) > 3:
         if len(times_bt_f_sdf) > 0:
-            plt.bar([x + 0.5 for x in sorted(list(i_arr))], times_bt_f_sdf, width=0.2, align='center', color='green',
+            plt.bar([x + 1.5*width for x in sorted(list(i_arr))], times_bt_f_sdf, width=width, align='center', color='#ba0000',
                     label=info[3])
     plt.xticks(sorted(list(i_arr)))
-    plt.xlabel("Puzzle number")
+    plt.xlabel("Sudoku number")
     plt.ylabel("Time [s]")
     plt.legend()
     plt.show()
 
-
-
 def speedup(one, two):
-    return str(round(round(one/two,4)*100,4))+'%'
+    return str(round(round(one / two, 4) * 100 - 100, 4)) + '%'
 
 stats = []
 speedups = []
-for one,two in zip(times_bt,times_bt_f):
-    speedups.append(float(speedup(one,two)[:-1]))
-    stats.append((one,two,speedup(one,two)))
-    print((one,two,speedup(one,two)))
-print('avg speedup:', sum(speedups)/len(speedups))
+for one, two in zip(times_bt, times_bt_f):
+    speedups.append(float(speedup(one, two)[:-1]))
+    stats.append((round(one,4), round(two,4), speedup(one, two)))
+    print(stats[-1])
+print('avg speedup:', str(round(sum(speedups) / len(speedups), 2)) + '%')

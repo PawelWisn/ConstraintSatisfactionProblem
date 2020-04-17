@@ -95,7 +95,7 @@ class Crossword:
 
         self.domains = {}
         self.variables = []
-        for var in sorted(vars, key=lambda x: len(words[len(x)])):
+        for var in vars:
             self.variables.append(tuple(var))
             self.domains[tuple(var)] = words[len(var)]
 
@@ -115,7 +115,7 @@ class Crossword:
                 temp = []
                 for var in self.variables:
                     if (i, j) in var:
-                        temp.append((var, var.index((i,j))))
+                        temp.append((var, var.index((i, j))))
                         if len(temp) == 2:
                             break
                 self.varsAssignedToSquare[(i, j)] = temp
@@ -127,12 +127,15 @@ class Crossword:
     # def sort_variables(self, low_to_high=True):
     #     self.domains = OrderedDict(sorted(self.domains.items(), key=lambda x: len(x[1]), reverse=not low_to_high))
     #     self.variables = [var for var, dom in self.domains.items()]
-
-    def constraints(self, vars):
+    def constraint_unique_word(self, vars):
         varList = list(vars.items())
         newVar, newVal = varList[-1]  # new variable
         if newVal in [val for var, val in varList[:-1]]:
             return False
+        return True
+
+    def constraint_word_fits(self, vars):
+        newVar, newVal = list(vars.items())[-1]  # new variable
         for square in newVar:
             if len(self.varsAssignedToSquare[square]) == 2:
                 (var1, idx1), (var2, idx2) = self.varsAssignedToSquare[square]
@@ -143,76 +146,84 @@ class Crossword:
         return True
 
 
-first = 0
-last = 28
+printAllowed = True
+first = 20
+last = 20
 skip = 1
 times_bt = []
 times_bt_f = []
 times_bt_sdf = []
 times_bt_f_sdf = []
 i_arr = set()
-info = ["Backtrack", "Forward"]  # ,"Backtrack - SDF","Forward - SDF"]
+info = ["Backtrack", "Backtrack - SDF", "Forward", "Forward - SDF"]
 for run in range(len(info)):
-    # if run < 1:
+    # if run ==0 or run==2:
     #     continue
     print("+" * 90, "RUN:", info[run])
     for i in range(first, last + 1, skip):
-        if i == 3 or i == 18 or i == 4:
-            continue
+        # if i == 3:
+        #     continue
         i_arr.add(i)
         c = Crossword(i)
 
+        sdf = run % 2
+
         vars = Variables(c.variables, c.neighbours)
         domains = Domains(c.domains)
-        constraints = Constraints([c.constraints])
-        csp = CSP(vars, domains, constraints, c)
+        constraints = Constraints([c.constraint_unique_word, c.constraint_word_fits])
+        csp = CSP(vars, domains, constraints, sdf)
 
-        print('-' * 40, info[run], i)
+        if printAllowed: print('-' * 40, info[run], i)
 
         start = time()
-        if run == 1 or run == 3:
-            sol = csp.forward()
-        elif run == 0 or run == 2:
+        if run <= 1:
             sol = csp.backtrackSearch()
+        else:
+            sol = csp.forward()
         end = time()
 
-        if sol:
-            c.board.dictToSquare(sol)
-            c.board.print_state()
-        else:
-            print("NO SOLUTION")
+        if printAllowed:
+            if sol:
+                c.board.dictToSquare(sol)
+                c.board.print_state()
+            else:
+                print("NO SOLUTION")
 
-        diff = end - start
-        if run == 0:
-            times_bt.append(diff)
-        if run == 1:
-            times_bt_f.append(diff)
-        if run == 2:
-            times_bt_sdf.append(diff)
-        if run == 3:
-            times_bt_f_sdf.append(diff)
+            diff = end - start
+            if run == 0:
+                times_bt.append(diff)
+            if run == 2:
+                times_bt_f.append(diff)
+            if run == 1:
+                times_bt_sdf.append(diff)
+            if run == 3:
+                times_bt_f_sdf.append(diff)
 
-        print('time: %.10f\n' % (end - start))
+            if printAllowed: print('time: %.10f\n' % (end - start))
 
 width = 0.2
 if len(info) > 0:
     if len(times_bt) > 0:
-        plt.bar([x - width / 2 for x in sorted(list(i_arr))], times_bt, width=width, align='center', color='green',
+        plt.bar([x - 1.5 * width for x in sorted(list(i_arr))], times_bt, width=width, align='center',
+                color='#00bb00',
                 label=info[0])
     if len(info) > 1:
-        if len(times_bt_f) > 0:
-            plt.bar([x + width / 2 for x in sorted(list(i_arr))], times_bt_f, width=width, align='center', color='red',
+        if len(times_bt_sdf) > 0:
+            plt.bar([x - width / 2 for x in sorted(list(i_arr))], times_bt_sdf, width=width, align='center',
+                    color='green',
                     label=info[1])
     if len(info) > 2:
-        if len(times_bt_sdf) > 0:
-            plt.bar([x + 0.3 for x in sorted(list(i_arr))], times_bt_sdf, width=0.2, align='center', color='brown',
+        if len(times_bt_f) > 0:
+            plt.bar([x + width / 2 for x in sorted(list(i_arr))], times_bt_f, width=width, align='center',
+                    color='#ff0000',
                     label=info[2])
     if len(info) > 3:
         if len(times_bt_f_sdf) > 0:
-            plt.bar([x + 0.5 for x in sorted(list(i_arr))], times_bt_f_sdf, width=0.2, align='center', color='green',
+            plt.bar([x + 1.5 * width for x in sorted(list(i_arr))], times_bt_f_sdf, width=width, align='center',
+                    color='#ba0000',
                     label=info[3])
     plt.xticks(sorted(list(i_arr)))
-    plt.xlabel("Puzzle number")
+    plt.xlabel("Crossword number")
     plt.ylabel("Time [s]")
     plt.legend()
     plt.show()
@@ -226,6 +237,6 @@ stats = []
 speedups = []
 for one, two in zip(times_bt, times_bt_f):
     speedups.append(float(speedup(one, two)[:-1]))
-    stats.append((round(one,3), round(two,3), speedup(one, two)))
+    stats.append((round(one, 4), round(two, 4), speedup(one, two)))
     print(stats[-1])
 print('avg speedup:', str(round(sum(speedups) / len(speedups), 2)) + '%')
