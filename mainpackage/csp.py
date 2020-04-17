@@ -142,11 +142,11 @@ class Constraints:
 
 
 class CSP:
-    def __init__(self, variables, domains, constraints, sdf):
+    def __init__(self, variables, domains, constraints, sdf=True):
         self.variables = variables
         self.domains = domains
         self.constraints = constraints
-        self.sdf = sdf# shortest domain first
+        self.sdf = sdf  # shortest domain first
 
     def backtrackSearch(self):
         return self._try(self.variables, self.domains)

@@ -5,9 +5,11 @@ from collections import OrderedDict
 
 
 class Board:
-    def __init__(self, arr):
+    def __init__(self, arr, h, v):
         self.state = self.arr_to_square(arr)
         self.size = int(len(arr) ** 0.5)
+        self.h = h
+        self.v = v
 
     def arr_to_square(self, arr):
         a = int(len(arr) ** 0.5)
@@ -26,8 +28,16 @@ class Board:
         return self.state[x][y:y2]
 
     def print_state(self):
-        for row in self.state:
-            print(row)
+        for row_idx, row in enumerate(self.state):
+            if row_idx % (self.size//self.v)==0 and row_idx:
+                print('-'*(3*self.size))
+            for col_idx, square in enumerate(row):
+                if col_idx%(self.size//self.h)==0 and col_idx:
+                    print('|',end=' ')
+                print(square, end=' ')
+            print()
+
+
         print()
 
     def dictToSquare(self, d):
@@ -55,9 +65,9 @@ class Sudoku:
             line = f.readline().strip().split(';')
             self.id = int(line[0])
             self.difficulty = float(line[1])
-            self.puzzle = Board(list(line[2]))
             self.horBoxes = int(line[3])
             self.verBoxes = int(line[4])
+            self.puzzle = Board(list(line[2]), self.horBoxes,self.verBoxes)
             self.solution = Board(list(line[5])) if len(line) == 6 else None
             self.size = int(len(list(line[2])) ** 0.5)
             self.create_vars_doms()
@@ -173,7 +183,7 @@ class Sudoku:
         return len(numbers_in_box) == len(set(numbers_in_box))
 
 
-first = 13
+first =13
 last = 13
 skip = 1
 times_bt = []
@@ -181,27 +191,27 @@ times_bt_f = []
 times_bt_sdf = []
 times_bt_f_sdf = []
 i_arr = set()
-info = ["Backtrack", "Backtrack - SDF", "Forward" ,"Forward - SDF"]
+info = ["Backtrack", "Backtrack + SDF", "Backtrack + Forward", "Backtrack + Forward + SDF"]
 for run in range(len(info)):
 
-    print("+"*90, "RUN:", info[run])
+    print("+" * 90, "RUN:", info[run])
     for i in range(first, last + 1, skip):
         i_arr.add(i)
         s = Sudoku(i)
 
-        sdf = run%2
+        sdf = run % 2
 
         vars = Variables(s.variables, s.neighbours)
         domains = Domains(s.domains)
         constraints = Constraints([s.constraint_row, s.constraint_col, s.constraint_box])
-        csp = CSP(vars, domains, constraints,sdf)
+        csp = CSP(vars, domains, constraints, sdf)
 
-        print('-'*40, info[run], s.id)
+        print('=' * 40, info[run], s.id)
 
         # s.puzzle.print_state()
 
         start = time()
-        if run <=1:
+        if run <= 1:
             sol = csp.backtrackSearch()
         else:
             sol = csp.forward()
@@ -228,19 +238,22 @@ for run in range(len(info)):
 width = 0.2
 if len(info) > 0:
     if len(times_bt) > 0:
-        plt.bar([x - 1.5*width for x in sorted(list(i_arr))], times_bt, width=width, align='center', color='#00bb00',
+        plt.bar([x - 1.5 * width for x in sorted(list(i_arr))], times_bt, width=width, align='center', color='#00bb00',
                 label=info[0])
     if len(info) > 1:
         if len(times_bt_sdf) > 0:
-            plt.bar([x - width / 2 for x in sorted(list(i_arr))], times_bt_sdf, width=width, align='center', color='green',
+            plt.bar([x - width / 2 for x in sorted(list(i_arr))], times_bt_sdf, width=width, align='center',
+                    color='green',
                     label=info[1])
     if len(info) > 2:
         if len(times_bt_f) > 0:
-            plt.bar([x + width / 2 for x in sorted(list(i_arr))], times_bt_f, width=width, align='center', color='#ff0000',
+            plt.bar([x + width / 2 for x in sorted(list(i_arr))], times_bt_f, width=width, align='center',
+                    color='#ff0000',
                     label=info[2])
     if len(info) > 3:
         if len(times_bt_f_sdf) > 0:
-            plt.bar([x + 1.5*width for x in sorted(list(i_arr))], times_bt_f_sdf, width=width, align='center', color='#ba0000',
+            plt.bar([x + 1.5 * width for x in sorted(list(i_arr))], times_bt_f_sdf, width=width, align='center',
+                    color='#ba0000',
                     label=info[3])
     plt.xticks(sorted(list(i_arr)))
     plt.xlabel("Sudoku number")
@@ -248,13 +261,15 @@ if len(info) > 0:
     plt.legend()
     plt.show()
 
+
 def speedup(one, two):
     return str(round(round(one / two, 4) * 100 - 100, 4)) + '%'
+
 
 stats = []
 speedups = []
 for one, two in zip(times_bt, times_bt_f):
     speedups.append(float(speedup(one, two)[:-1]))
-    stats.append((round(one,4), round(two,4), speedup(one, two)))
+    stats.append((round(one, 4), round(two, 4), speedup(one, two)))
     print(stats[-1])
 print('avg speedup:', str(round(sum(speedups) / len(speedups), 2)) + '%')

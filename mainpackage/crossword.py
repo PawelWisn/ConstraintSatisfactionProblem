@@ -157,8 +157,8 @@ times_bt_f_sdf = []
 i_arr = set()
 info = ["Backtrack", "Backtrack - SDF", "Forward", "Forward - SDF"]
 for run in range(len(info)):
-    # if run ==0 or run==2:
-    #     continue
+    if run ==0 or run==2:
+        continue
     print("+" * 90, "RUN:", info[run])
     for i in range(first, last + 1, skip):
         # if i == 3:
