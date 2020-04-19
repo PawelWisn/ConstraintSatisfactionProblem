@@ -26,7 +26,7 @@ class Variables:
                     free.append((self.vars[i], domains.getDomain(self.vars[i])))
             if len(free) == 0:
                 return None
-            nextVar = sorted(free, key=lambda x: len(x[1]))[0][0]
+            nextVar = min(free, key=lambda x: len(x[1]))[0]
             self.ptrToCurr = self.vars.index(nextVar)
             self.taken[self.ptrToCurr] = True
             return nextVar
@@ -51,13 +51,12 @@ class Variables:
     def stepBack(self):
         self.taken[self.ptrToCurr] = False
         self.ptrToCurr = self.history.pop()
-        self.values.popitem()  # ?
+        self.values.popitem()
 
 
 class Domain:
     def __init__(self, arr, ptr=-1):
         self.vals = [x for x in arr]
-        self.valsCopy = [x for x in arr]
         self.active = [True for _ in arr]
         self.ptrToCurr = ptr
         self.size = len(arr)

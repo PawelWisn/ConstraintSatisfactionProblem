@@ -68,7 +68,7 @@ class Sudoku:
             self.horBoxes = int(line[3])
             self.verBoxes = int(line[4])
             self.puzzle = Board(list(line[2]), self.horBoxes,self.verBoxes)
-            self.solution = Board(list(line[5])) if len(line) == 6 else None
+            self.solution = Board(list(line[5]), self.horBoxes,self.verBoxes) if len(line) == 6 else None
             self.size = int(len(list(line[2])) ** 0.5)
             self.create_vars_doms()
 
@@ -183,19 +183,21 @@ class Sudoku:
         return len(numbers_in_box) == len(set(numbers_in_box))
 
 
-first =13
-last = 13
-skip = 1
+first =1
+last = 33
+skip = 3
 times_bt = []
 times_bt_f = []
 times_bt_sdf = []
 times_bt_f_sdf = []
 i_arr = set()
-info = ["Backtrack", "Backtrack + SDF", "Backtrack + Forward", "Backtrack + Forward + SDF"]
+info = ["BT", "BT + SDF", "BT + FC", "BT + FC + SDF"]
 for run in range(len(info)):
-
+    if run==1:continue
     print("+" * 90, "RUN:", info[run])
-    for i in range(first, last + 1, skip):
+    # for i in range(first, last + 1, skip):
+    # for i in [1,7,17,25,29,32,39]:
+    for i in [56]:
         i_arr.add(i)
         s = Sudoku(i)
 
@@ -208,7 +210,7 @@ for run in range(len(info)):
 
         print('=' * 40, info[run], s.id)
 
-        # s.puzzle.print_state()
+        s.puzzle.print_state()
 
         start = time()
         if run <= 1:
@@ -235,10 +237,38 @@ for run in range(len(info)):
 
         print('time: %.10f\n' % (end - start))
 
+# width = 0.2
+# i_arr = [i+1 for i in range(len(i_arr))]
+# if len(info) > 0:
+#     if len(times_bt) > 0:
+#         plt.bar([x - 1.5 * width for x in sorted(list(i_arr))], times_bt, width=width, align='center', color='#00bb00',
+#                 label=info[0])
+#     if len(info) > 1:
+#         if len(times_bt_sdf) > 0:
+#             plt.bar([x - width / 2 for x in sorted(list(i_arr))], times_bt_sdf, width=width, align='center',
+#                     color='green',
+#                     label=info[1])
+#     if len(info) > 2:
+#         if len(times_bt_f) > 0:
+#             plt.bar([x+width / 2 for x in sorted(list(i_arr))], times_bt_f, width=width, align='center',
+#                     color='#ff0000',
+#                     label=info[2])
+#     if len(info) > 3:
+#         if len(times_bt_f_sdf) > 0:
+#             plt.bar([x + 1.5 * width for x in sorted(list(i_arr))], times_bt_f_sdf, width=width, align='center',
+#                     color='#ba0000',
+#                     label=info[3])
+#     plt.xticks(sorted(list(i_arr)))
+#     plt.xlabel("Sudoku number")
+#     plt.ylabel("Time [s]")
+#     plt.legend()
+#     plt.show()
+
 width = 0.2
+i_arr = [i+2 for i in range(len(i_arr))]
 if len(info) > 0:
     if len(times_bt) > 0:
-        plt.bar([x - 1.5 * width for x in sorted(list(i_arr))], times_bt, width=width, align='center', color='#00bb00',
+        plt.bar([x - 1 * width for x in sorted(list(i_arr))], times_bt, width=width, align='center', color='#00bb00',
                 label=info[0])
     if len(info) > 1:
         if len(times_bt_sdf) > 0:
@@ -247,12 +277,12 @@ if len(info) > 0:
                     label=info[1])
     if len(info) > 2:
         if len(times_bt_f) > 0:
-            plt.bar([x + width / 2 for x in sorted(list(i_arr))], times_bt_f, width=width, align='center',
+            plt.bar([x for x in sorted(list(i_arr))], times_bt_f, width=width, align='center',
                     color='#ff0000',
                     label=info[2])
     if len(info) > 3:
         if len(times_bt_f_sdf) > 0:
-            plt.bar([x + 1.5 * width for x in sorted(list(i_arr))], times_bt_f_sdf, width=width, align='center',
+            plt.bar([x + 1 * width for x in sorted(list(i_arr))], times_bt_f_sdf, width=width, align='center',
                     color='#ba0000',
                     label=info[3])
     plt.xticks(sorted(list(i_arr)))
@@ -263,13 +293,23 @@ if len(info) > 0:
 
 
 def speedup(one, two):
-    return str(round(round(one / two, 4) * 100 - 100, 4)) + '%'
+    return float(round(round(one / two, 4), 2))
 
 
-stats = []
 speedups = []
-for one, two in zip(times_bt, times_bt_f):
-    speedups.append(float(speedup(one, two)[:-1]))
-    stats.append((round(one, 4), round(two, 4), speedup(one, two)))
-    print(stats[-1])
-print('avg speedup:', str(round(sum(speedups) / len(speedups), 2)) + '%')
+for bt, f, f_sdf in zip(times_bt,times_bt_f,times_bt_f_sdf):
+    speedups.append((speedup(bt,bt), speedup(bt,f), speedup(bt,f_sdf)))
+    print(*speedups[-1],sep=' ',end='\n')
+def avg(speedps):
+    one = two = three = four = 0
+    for line in speedps:
+        one += line[0]
+        #two += line[1]
+        three += line[1]
+        four += line[2]
+    one /= len(speedps)
+    #two /= len(speedps) if len(speedps) else 1
+    three /= len(speedps)
+    four /= len(speedps)
+    return round(one,2),round(three,2),round(four,2)
+print('avg speedup:', avg(speedups))
