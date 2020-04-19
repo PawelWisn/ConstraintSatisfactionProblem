@@ -145,7 +145,7 @@ class CSP:
         self.variables = variables
         self.domains = domains
         self.constraints = constraints
-        self.sdf = sdf  # shortest domain first
+        self.sdf = sdf  # shortest domain first heuristic
 
     def backtrackSearch(self):
         return self._try(self.variables, self.domains)
@@ -164,7 +164,7 @@ class CSP:
         vars.stepBack()
         return False
 
-    def forward(self):
+    def backtrackForwardSearch(self):
         return self._forward(self.variables, self.domains)
 
     def _forward(self, vars, domains):

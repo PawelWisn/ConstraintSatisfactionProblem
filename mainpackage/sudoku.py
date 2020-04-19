@@ -184,8 +184,8 @@ class Sudoku:
 
 
 first =1
-last = 33
-skip = 3
+last = 46
+skip = 1
 times_bt = []
 times_bt_f = []
 times_bt_sdf = []
@@ -193,11 +193,11 @@ times_bt_f_sdf = []
 i_arr = set()
 info = ["BT", "BT + SDF", "BT + FC", "BT + FC + SDF"]
 for run in range(len(info)):
-    if run==1:continue
+    if run!=2:continue
     print("+" * 90, "RUN:", info[run])
-    # for i in range(first, last + 1, skip):
+    for i in range(first, last + 1, skip):
     # for i in [1,7,17,25,29,32,39]:
-    for i in [56]:
+    # for i in [13]:
         i_arr.add(i)
         s = Sudoku(i)
 
@@ -216,7 +216,7 @@ for run in range(len(info)):
         if run <= 1:
             sol = csp.backtrackSearch()
         else:
-            sol = csp.forward()
+            sol = csp.backtrackForwardSearch()
         end = time()
 
         if sol:
