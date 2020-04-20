@@ -1,9 +1,7 @@
 from mainpackage.csp import CSP, Variables, Constraints, Domains
 from time import time
 import matplotlib.pyplot as plt
-from collections import OrderedDict
 from copy import deepcopy
-from math import log2
 
 
 class Board:
@@ -120,14 +118,6 @@ class Crossword:
                             break
                 self.varsAssignedToSquare[(i, j)] = temp
 
-    def reset_fill(self, vars):
-        self.board.dictToSquare(vars)
-        self.board.print_state()
-
-    def sort_variables(self, low_to_high=True):
-        self.domains = OrderedDict(sorted(self.domains.items(), key=lambda x: len(x[1]), reverse=not low_to_high))
-        self.variables = [var for var, dom in self.domains.items()]
-
     def constraint_unique_word(self, vars):
         varList = list(vars.items())
         newVar, newVal = varList[-1]  # new variable
@@ -147,152 +137,11 @@ class Crossword:
         return True
 
 
-printAllowed = 1
-first = 2
-last = 2
-skip = 1
-times_bt = []
-times_bt_f = []
-times_bt_sdf = []
-times_bt_f_sdf = []
-i_arr = set()
-info = ["BT", "BT + SDF", "BT + FC", "BT + FC + SDF"]
-for run in range(len(info)):
-    if run % 2 == 0:
-        continue
-    print("+" * 90, "RUN:", info[run])
-    # for i in range(first, last + 1, skip):
-    for i in [27,28]:
-        # if i == 3:
-        #     continue
-        i_arr.add(i)
-        c = Crossword(i)
-
-        sdf = run % 2
-
-        vars = Variables(c.variables, c.neighbours)
-        domains = Domains(c.domains)
-        constraints = Constraints([c.constraint_unique_word, c.constraint_word_fits])
-        csp = CSP(vars, domains, constraints, sdf)
-
-        if printAllowed: print('-' * 40, info[run], i)
-
-        if printAllowed: c.board.print_state()
-
-        start = time()
-        if run <= 1:
-            sol = csp.backtrackSearch()
-        else:
-            sol = csp.backtrackForwardSearch()
-        end = time()
-
-        if printAllowed:
-            if sol:
-                c.board.dictToSquare(sol)
-                c.board.print_state()
-            else:
-                print("NO SOLUTION")
-
-        diff = end - start
-        if run == 0:
-            times_bt.append(diff)
-        if run == 2:
-            times_bt_f.append(diff)
-        if run == 1:
-            times_bt_sdf.append(diff)
-        if run == 3:
-            times_bt_f_sdf.append(diff)
-
-        if printAllowed: print('time: %.10f\n' % (end - start))
-
-width = 0.2
-i_arr = [i + 1 for i in range(len(i_arr))]
-if len(info) > 0:
-    if len(times_bt_sdf) > 0:
-        plt.bar([x - width / 2 for x in sorted(list(i_arr))], times_bt_sdf, width=width, align='center',
-                    color='green',
-                    label=info[1])
-
-    if len(info) > 1:
-        if len(times_bt_f_sdf) > 0:
-            plt.bar([x + width / 2  for x in sorted(list(i_arr))], times_bt_f_sdf, width=width, align='center',
-                    color='#ba0000',
-                    label=info[3])
-    plt.xticks(sorted(list(i_arr)))
-    plt.xlabel("Crossword number")
-    plt.ylabel("Time [s]")
-    plt.legend()
-    plt.show()
-# width = 0.2
-# i_arr = [i + 1 for i in range(len(i_arr))]
-# if len(info) > 0:
-#     if len(times_bt) > 0:
-#         plt.bar([x - 1.5 * width for x in sorted(list(i_arr))], times_bt, width=width, align='center',
-#                 color='#00bb00',
-#                 label=info[0])
-#     if len(info) > 1:
-#         if len(times_bt_sdf) > 0:
-#             plt.bar([x - width / 2 for x in sorted(list(i_arr))], times_bt_sdf, width=width, align='center',
-#                     color='green',
-#                     label=info[1])
-#     if len(info) > 2:
-#         if len(times_bt_f) > 0:
-#             plt.bar([x + width / 2 for x in sorted(list(i_arr))], times_bt_f, width=width, align='center',
-#                     color='#ff0000',
-#                     label=info[2])
-#     if len(info) > 3:
-#         if len(times_bt_f_sdf) > 0:
-#             plt.bar([x + 1.5 * width for x in sorted(list(i_arr))], times_bt_f_sdf, width=width, align='center',
-#                     color='#ba0000',
-#                     label=info[3])
-#     plt.xticks(sorted(list(i_arr)))
-#     plt.xlabel("Crossword number")
-#     plt.ylabel("Time [s]")
-#     plt.legend()
-#     plt.show()
-
-
-def speedup(one, two):
-    return float(round(round(one / two, 4), 2))
-
-
-speedups = []
-for bt_sdf, f_sdf in zip(times_bt_sdf,  times_bt_f_sdf):
-    speedups.append((speedup(bt_sdf, bt_sdf), speedup(bt_sdf, f_sdf)))
-    print(*speedups[-1], sep=' ', end='\n')
-
-
-def avg(speedps):
-    one = two = 0
-    for line in speedps:
-        one += line[0]
-        two += line[1]
-    one /= len(speedps)
-    two /= len(speedps)
-    return round(one, 2), round(two, 2)
-
-
-print('avg speedup:', avg(speedups))
-#
-#
-# speedups = []
-# for bt, bt_sdf, f, f_sdf in zip(times_bt, times_bt_sdf, times_bt_f, times_bt_f_sdf):
-#     speedups.append((speedup(bt, bt), speedup(bt, bt_sdf), speedup(bt, f), speedup(bt, f_sdf)))
-#     print(*speedups[-1], sep=' ', end='\n')
-#
-#
-# def avg(speedps):
-#     one = two = three = four = 0
-#     for line in speedps:
-#         one += line[0]
-#         two += line[1]
-#         three += line[2]
-#         four += line[3]
-#     one /= len(speedps)
-#     two /= len(speedps)
-#     three /= len(speedps)
-#     four /= len(speedps)
-#     return round(one, 2), round(two, 2), round(three, 2), round(four, 2)
-#
-#
-# print('avg speedup:', avg(speedups))
+#example invoke
+c = Crossword(1)
+vars = Variables(c.variables, c.neighbours)
+domains = Domains(c.domains)
+constraints = Constraints([c.constraint_unique_word, c.constraint_word_fits])
+csp = CSP(vars, domains, constraints)
+csp.backtrackSearch()
+csp.backtrackForwardSearch()
