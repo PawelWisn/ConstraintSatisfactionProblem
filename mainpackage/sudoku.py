@@ -178,9 +178,13 @@ class Sudoku:
 
 # example invoke
 s = Sudoku(40)
+s.puzzle.print_state()
 vars = Variables(s.variables, s.neighbours)
 domains = Domains(s.domains)
 constraints = Constraints([s.constraint_row, s.constraint_col, s.constraint_box])
 csp = CSP(vars, domains, constraints)
 csp.backtrackSearch()
-csp.backtrackForwardSearch()
+result = csp.backtrackForwardSearch()
+
+s.puzzle.dictToSquare(result)
+s.puzzle.print_state()
