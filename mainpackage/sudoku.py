@@ -1,6 +1,5 @@
 from mainpackage.csp import CSP, Variables, Constraints, Domains
 from time import time
-import matplotlib.pyplot as plt
 from collections import OrderedDict
 
 
